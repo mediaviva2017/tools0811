@@ -482,7 +482,8 @@ function render(){
 function itemCard(it){
   const shownFull = revealed.has(it.id);
   const meta = !it.event && it.album ? it.album : '';
-  const usage = [it.region, it.venue, it.category].filter(Boolean);
+  // 落選は種類だけ表示（地域・開催場所は記録は残すが表示しない）
+  const usage = (it.status === 'lost' ? [it.category] : [it.region, it.venue, it.category]).filter(Boolean);
   const actions = [];
   if (it.status === 'unused') actions.push(el('button', {class:'btn small use', onclick:() => openEdit(it.id, 'use')}, '使う'));
   if (it.status === 'applied'){ // 旧データ（結果未入力）
