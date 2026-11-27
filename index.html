@@ -1,0 +1,548 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 外部への通信を一切禁止（データが送信される経路を作らない） -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#111114">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="シリアル">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>シリアル管理</title>
+<style>
+:root{
+  --bg:#f6f5f2;--card:#ffffff;--text:#1b1b1f;--muted:#6b6b75;--line:#e3e2dd;
+  --accent:#c8102e;--accent-weak:#fbe9ec;--ok:#1f7a4d;--ok-weak:#e4f3eb;
+  --warn:#9a6700;--warn-weak:#fdf3d8;--info:#2457a6;--info-weak:#e6eefb;--gray-weak:#efefef;
+}
+@media (prefers-color-scheme: dark){
+  :root{
+    --bg:#111114;--card:#1b1b20;--text:#ececf1;--muted:#9a9aa6;--line:#2c2c34;
+    --accent:#ff4d64;--accent-weak:#3a1820;--ok:#5fd39a;--ok-weak:#14301f;
+    --warn:#f2c14e;--warn-weak:#3a2f12;--info:#7aa7ff;--info-weak:#17243d;--gray-weak:#26262d;
+  }
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{padding-top:env(safe-area-inset-top);background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:880px;margin:0 auto;padding:16px 16px 80px}
+h1{font-size:20px;margin:4px 0 16px;letter-spacing:.02em}
+h1 small{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.lock{max-width:420px;margin:12vh auto 0}
+.lock p{color:var(--muted);font-size:13px;margin:6px 0 14px}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+textarea{min-height:64px;resize:vertical}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn.small{padding:5px 9px;font-size:13px;border-radius:8px}
+.btn.danger{color:var(--accent)}
+.btn.block{width:100%;margin-top:14px}
+.err{color:var(--accent);font-size:13px;min-height:1.4em;margin-top:8px}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
+.bar .grow{flex:1 1 200px}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted)}
+.list{display:flex;flex-direction:column;gap:8px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.item .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.item .title{font-weight:600;word-break:break-word}
+.item .meta{font-size:12px;color:var(--muted);margin-top:2px;word-break:break-word}
+.serial{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.serial code{font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--gray-weak);padding:5px 9px;border-radius:8px;letter-spacing:.06em;word-break:break-all}
+.pill{font-size:12px;padding:2px 9px;border-radius:999px;white-space:nowrap}
+.s-unused{background:var(--info-weak);color:var(--info)}
+.s-applied{background:var(--warn-weak);color:var(--warn)}
+.s-won{background:var(--ok-weak);color:var(--ok)}
+.s-lost{background:var(--gray-weak);color:var(--muted)}
+.memo{font-size:13px;margin-top:6px;white-space:pre-wrap;word-break:break-word}
+.actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+dialog{border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--text);padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog form{padding:18px}
+dialog h2{font-size:17px;margin:0 0 4px}
+.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.foot{font-size:12px;color:var(--muted);margin-top:18px}
+.hidden{display:none!important}
+.check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:10px}
+.check input{width:auto}
+@media (max-width:560px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .grid2{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ロック画面 -->
+  <section id="lockView" class="card lock hidden">
+    <h1>シリアル管理 <small>🔒 ロック中</small></h1>
+    <p id="lockMsg"></p>
+    <form id="lockForm" autocomplete="off">
+      <label for="pw1">パスワード</label>
+      <input id="pw1" type="password" autocomplete="current-password" required>
+      <div id="pw2Wrap" class="hidden">
+        <label for="pw2">パスワード（確認）</label>
+        <input id="pw2" type="password" autocomplete="new-password">
+      </div>
+      <div id="lockErr" class="err"></div>
+      <button class="btn primary block" id="lockBtn" type="submit">開く</button>
+    </form>
+    <div id="importFromLock" class="foot">
+      <button class="btn small" id="lockImportBtn" type="button">バックアップから復元</button>
+    </div>
+  </section>
+
+  <!-- メイン画面 -->
+  <section id="mainView" class="hidden">
+    <div class="bar">
+      <h1 style="margin:0;flex:1">シリアル管理</h1>
+      <button class="btn" id="lockNow" title="今すぐロック">🔒 ロック</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <div class="bar">
+      <input class="grow" id="q" type="search" placeholder="アルバム・店舗・イベント・メモで検索" autocomplete="off">
+      <select id="fStatus" style="width:auto">
+        <option value="">すべての状態</option>
+        <option value="unused">未使用</option>
+        <option value="applied">応募済</option>
+        <option value="won">当選</option>
+        <option value="lost">落選</option>
+      </select>
+      <button class="btn primary" id="addBtn">＋ 追加</button>
+    </div>
+
+    <div class="list" id="list"></div>
+
+    <div class="foot">
+      <div class="bar" style="margin-top:12px">
+        <button class="btn small" id="exportBtn">暗号化バックアップを保存</button>
+        <button class="btn small" id="importBtn">バックアップから復元</button>
+        <button class="btn small" id="pwBtn">パスワード変更</button>
+        <button class="btn small danger" id="wipeBtn">全データ削除</button>
+      </div>
+      データはこの端末のブラウザ内にだけ、パスワードで暗号化（AES-256）して保存されます。外部への送信はしません。
+      <span id="idleInfo"></span>
+    </div>
+  </section>
+</div>
+
+<!-- 追加・編集ダイアログ -->
+<dialog id="editDlg">
+  <form id="editForm" method="dialog" autocomplete="off">
+    <h2 id="editTitle">シリアルを追加</h2>
+    <label for="eSerial">シリアルコード *</label>
+    <input id="eSerial" required spellcheck="false" autocapitalize="characters" style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em">
+    <div class="grid2">
+      <div>
+        <label for="eAlbum">アルバム</label>
+        <input id="eAlbum" list="albumList" placeholder="例：★★★★★ (5-STAR)">
+      </div>
+      <div>
+        <label for="eVersion">バージョン</label>
+        <input id="eVersion" placeholder="例：通常盤 / 限定盤A">
+      </div>
+      <div>
+        <label for="eShop">購入店舗</label>
+        <input id="eShop" list="shopList" placeholder="例：タワレコ">
+      </div>
+      <div>
+        <label for="eEvent">用途・イベント</label>
+        <input id="eEvent" list="eventList" placeholder="例：サイン会 / ヨントン">
+      </div>
+      <div>
+        <label for="eStatus">状態</label>
+        <select id="eStatus">
+          <option value="unused">未使用</option>
+          <option value="applied">応募済</option>
+          <option value="won">当選</option>
+          <option value="lost">落選</option>
+        </select>
+      </div>
+      <div>
+        <label for="eDate">応募日・使用日</label>
+        <input id="eDate" type="date">
+      </div>
+    </div>
+    <label for="eMemo">メモ</label>
+    <textarea id="eMemo"></textarea>
+    <div class="dlg-actions">
+      <button class="btn" type="button" id="editCancel">キャンセル</button>
+      <button class="btn primary" type="submit" value="save">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- パスワード変更ダイアログ -->
+<dialog id="pwDlg">
+  <form id="pwForm" method="dialog" autocomplete="off">
+    <h2>パスワード変更</h2>
+    <label for="pwOld">現在のパスワード</label>
+    <input id="pwOld" type="password" required>
+    <label for="pwNew">新しいパスワード（8文字以上）</label>
+    <input id="pwNew" type="password" required minlength="8">
+    <label for="pwNew2">新しいパスワード（確認）</label>
+    <input id="pwNew2" type="password" required minlength="8">
+    <div id="pwErr" class="err"></div>
+    <div class="dlg-actions">
+      <button class="btn" type="button" id="pwCancel">キャンセル</button>
+      <button class="btn primary" type="submit">変更</button>
+    </div>
+  </form>
+</dialog>
+
+<datalist id="albumList"></datalist>
+<datalist id="shopList"></datalist>
+<datalist id="eventList"></datalist>
+<input type="file" id="fileIn" accept=".json,application/json" class="hidden">
+<div class="toast" id="toast"></div>
+
+<script>
+(() => {
+'use strict';
+
+const STORE_KEY = 'skzSerialVault.v1';
+const PBKDF2_ITER = 600000;
+const IDLE_LOCK_MS = 5 * 60 * 1000;      // 5分操作がなければ自動ロック
+const HIDDEN_LOCK_MS = 60 * 1000;        // 1分以上バックグラウンドならロック
+const CLIP_CLEAR_MS = 30 * 1000;         // コピーしたシリアルを30秒後に消去（可能な場合）
+
+const STATUS = {unused:'未使用', applied:'応募済', won:'当選', lost:'落選'};
+const $ = id => document.getElementById(id);
+
+// ---- 状態（鍵とデータはメモリ上のみ。ロック時に破棄） ----
+let key = null;       // 非エクスポートの CryptoKey
+let salt = null;
+let items = [];
+let revealed = new Set();
+let editingId = null;
+let idleTimer = null, hiddenAt = 0;
+
+// ---- 暗号化ユーティリティ ----
+const enc = new TextEncoder(), dec = new TextDecoder();
+const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
+
+async function deriveKey(password, saltBytes, iter = PBKDF2_ITER){
+  const base = await crypto.subtle.importKey('raw', enc.encode(password.normalize('NFKC')), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey(
+    {name:'PBKDF2', salt:saltBytes, iterations:iter, hash:'SHA-256'},
+    base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
+}
+async function seal(k, s, data){
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, k, enc.encode(JSON.stringify(data)));
+  return {app:'skz-serial', v:1, kdf:'PBKDF2-SHA256', iter:PBKDF2_ITER, salt:b64(s), iv:b64(iv), ct:b64(ct)};
+}
+async function open(k, blob){
+  const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(blob.iv)}, k, unb64(blob.ct));
+  return JSON.parse(dec.decode(pt));
+}
+function validBlob(b){
+  return b && b.app === 'skz-serial' && b.v === 1 && typeof b.salt === 'string' && typeof b.iv === 'string' && typeof b.ct === 'string';
+}
+
+// ---- 保存 ----
+function readStore(){
+  try { const raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : null; }
+  catch { return null; }
+}
+async function persist(){
+  const blob = await seal(key, salt, {items});
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(blob)); }
+  catch { toast('保存に失敗しました。バックアップを保存してください'); }
+}
+
+// ---- 画面切替 ----
+function showLock(msg){
+  key = null; items = []; revealed.clear(); salt = null;
+  $('list').replaceChildren(); $('stats').replaceChildren();
+  closeDialogs();
+  $('mainView').classList.add('hidden');
+  $('lockView').classList.remove('hidden');
+  const exists = !!readStore();
+  $('pw2Wrap').classList.toggle('hidden', exists);
+  $('pw2').required = !exists;
+  $('pw1').autocomplete = exists ? 'current-password' : 'new-password';
+  $('lockBtn').textContent = exists ? '開く' : 'パスワードを設定してはじめる';
+  $('lockMsg').textContent = msg || (exists
+    ? 'パスワードを入力してください。'
+    : 'はじめにパスワードを設定します（8文字以上）。このパスワードを忘れるとデータは復元できません。');
+  $('lockErr').textContent = '';
+  $('pw1').value = ''; $('pw2').value = '';
+  setTimeout(() => $('pw1').focus(), 50);
+}
+function showMain(){
+  $('lockView').classList.add('hidden');
+  $('mainView').classList.remove('hidden');
+  render();
+  bumpIdle();
+}
+function closeDialogs(){ for (const d of document.querySelectorAll('dialog')) if (d.open) d.close(); }
+
+// ---- ロック解除 ----
+$('lockForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const pw = $('pw1').value, err = $('lockErr');
+  err.textContent = '';
+  const stored = readStore();
+  $('lockBtn').disabled = true; $('lockBtn').textContent = '処理中…';
+  try {
+    if (!stored){
+      if (pw.length < 8) { err.textContent = '8文字以上にしてください'; return; }
+      if (pw !== $('pw2').value) { err.textContent = '確認用パスワードが一致しません'; return; }
+      salt = crypto.getRandomValues(new Uint8Array(16));
+      key = await deriveKey(pw, salt);
+      items = [];
+      await persist();
+    } else {
+      if (!validBlob(stored)) { err.textContent = '保存データが壊れています'; return; }
+      salt = unb64(stored.salt);
+      const k = await deriveKey(pw, salt, stored.iter || PBKDF2_ITER);
+      try { const data = await open(k, stored); key = k; items = Array.isArray(data.items) ? data.items : []; }
+      catch { await new Promise(r => setTimeout(r, 600)); err.textContent = 'パスワードが違います'; return; }
+    }
+    $('pw1').value = ''; $('pw2').value = '';
+    showMain();
+  } finally {
+    $('lockBtn').disabled = false;
+    if (!key) $('lockBtn').textContent = readStore() ? '開く' : 'パスワードを設定してはじめる';
+  }
+});
+$('lockNow').addEventListener('click', () => showLock('ロックしました。'));
+
+// ---- 自動ロック ----
+function bumpIdle(){
+  if (!key) return;
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => showLock('一定時間操作がなかったためロックしました。'), IDLE_LOCK_MS);
+}
+['pointerdown','keydown','scroll','touchstart'].forEach(ev => addEventListener(ev, bumpIdle, {passive:true}));
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) { hiddenAt = Date.now(); revealed.clear(); if (key) render(); }
+  else if (key && hiddenAt && Date.now() - hiddenAt > HIDDEN_LOCK_MS) showLock('バックグラウンドにあったためロックしました。');
+});
+$('idleInfo').textContent = `5分間操作がないと自動でロックされます。`;
+
+// ---- 表示 ----
+function mask(s){
+  if (s.length <= 4) return '•'.repeat(s.length);
+  return '•'.repeat(Math.max(4, s.length - 4)) + s.slice(-4);
+}
+function el(tag, props = {}, ...kids){
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)){
+    if (k === 'class') n.className = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v);
+  }
+  for (const c of kids) if (c != null && c !== false) n.append(c);  // 文字列は常にテキストノード（HTMLとして解釈しない）
+  return n;
+}
+function render(){
+  if (!key) return;
+  // 統計
+  const cnt = {all:items.length, unused:0, applied:0, won:0, lost:0};
+  for (const it of items) cnt[it.status] = (cnt[it.status] || 0) + 1;
+  $('stats').replaceChildren(
+    ...[['all','合計'],['unused','未使用'],['applied','応募済'],['won','当選']].map(([k, l]) =>
+      el('div', {class:'stat'}, el('b', {}, String(cnt[k] || 0)), el('span', {}, l))));
+
+  // 入力候補
+  const fill = (id, field) => $(id).replaceChildren(...[...new Set(items.map(i => i[field]).filter(Boolean))].sort().map(v => el('option', {value:v})));
+  fill('albumList', 'album'); fill('shopList', 'shop'); fill('eventList', 'event');
+
+  // 一覧
+  const q = $('q').value.trim().toLowerCase(), fs = $('fStatus').value;
+  const shown = items
+    .filter(i => !fs || i.status === fs)
+    .filter(i => !q || [i.album, i.version, i.shop, i.event, i.memo].some(v => (v || '').toLowerCase().includes(q)))
+    .sort((a, b) => (b.updated || 0) - (a.updated || 0));
+
+  if (!shown.length){
+    $('list').replaceChildren(el('div', {class:'empty'}, items.length ? '該当するシリアルはありません' : 'まだシリアルがありません。「＋ 追加」から登録してください。'));
+    return;
+  }
+  $('list').replaceChildren(...shown.map(it => {
+    const shownFull = revealed.has(it.id);
+    const meta = [it.version, it.shop, it.event, it.date].filter(Boolean).join(' ・ ');
+    return el('div', {class:'item'},
+      el('div', {class:'top'},
+        el('div', {},
+          el('div', {class:'title'}, it.album || '（アルバム未入力）'),
+          meta ? el('div', {class:'meta'}, meta) : null),
+        el('span', {class:'pill s-' + it.status}, STATUS[it.status] || it.status)),
+      el('div', {class:'serial'},
+        el('code', {}, shownFull ? it.serial : mask(it.serial)),
+        el('button', {class:'btn small', onclick:() => { shownFull ? revealed.delete(it.id) : revealed.add(it.id); render(); }}, shownFull ? "隠す" : "表示"),
+        el('button', {class:'btn small', onclick:() => copySerial(it.serial)}, 'コピー')),
+      it.memo ? el('div', {class:'memo'}, it.memo) : null,
+      el('div', {class:'actions'},
+        ...['unused','applied','won','lost'].filter(s => s !== it.status).map(s =>
+          el('button', {class:'btn small', onclick:() => setStatus(it.id, s)}, '→ ' + STATUS[s])),
+        el('span', {style:'flex:1'}),
+        el('button', {class:'btn small', onclick:() => openEdit(it.id)}, '編集'),
+        el('button', {class:'btn small danger', onclick:() => removeItem(it.id)}, '削除')));
+  }));
+}
+$('q').addEventListener('input', render);
+$('fStatus').addEventListener('change', render);
+
+// ---- 操作 ----
+async function copySerial(s){
+  try {
+    await navigator.clipboard.writeText(s);
+    toast('コピーしました（30秒後にクリップボードを消去）');
+    setTimeout(async () => {
+      try { if ((await navigator.clipboard.readText()) === s) await navigator.clipboard.writeText(''); } catch {}
+    }, CLIP_CLEAR_MS);
+  } catch { toast('コピーできませんでした'); }
+}
+async function setStatus(id, s){
+  const it = items.find(i => i.id === id); if (!it) return;
+  it.status = s; it.updated = Date.now();
+  if ((s === 'applied' || s === 'won' || s === 'lost') && !it.date) it.date = new Date().toISOString().slice(0, 10);
+  await persist(); render();
+}
+async function removeItem(id){
+  const it = items.find(i => i.id === id); if (!it) return;
+  if (!confirm(`「${it.album || 'シリアル'}」(…${it.serial.slice(-4)}) を削除しますか？`)) return;
+  items = items.filter(i => i.id !== id);
+  await persist(); render(); toast('削除しました');
+}
+function openEdit(id){
+  editingId = id || null;
+  const it = id ? items.find(i => i.id === id) : {};
+  $('editTitle').textContent = id ? 'シリアルを編集' : 'シリアルを追加';
+  $('eSerial').value = it.serial || '';
+  $('eAlbum').value = it.album || '';
+  $('eVersion').value = it.version || '';
+  $('eShop').value = it.shop || '';
+  $('eEvent').value = it.event || '';
+  $('eStatus').value = it.status || 'unused';
+  $('eDate').value = it.date || '';
+  $('eMemo').value = it.memo || '';
+  $('editDlg').showModal();
+  $('eSerial').focus();
+}
+$('addBtn').addEventListener('click', () => openEdit(null));
+$('editCancel').addEventListener('click', () => $('editDlg').close());
+$('editForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const serial = $('eSerial').value.trim().replace(/\s+/g, '');
+  if (!serial) return;
+  const dup = items.find(i => i.serial.toUpperCase() === serial.toUpperCase() && i.id !== editingId);
+  if (dup && !confirm('同じシリアルがすでに登録されています。保存しますか？')) return;
+  const data = {
+    serial, album:$('eAlbum').value.trim(), version:$('eVersion').value.trim(),
+    shop:$('eShop').value.trim(), event:$('eEvent').value.trim(),
+    status:$('eStatus').value, date:$('eDate').value, memo:$('eMemo').value.trim(), updated:Date.now()
+  };
+  if (editingId) Object.assign(items.find(i => i.id === editingId), data);
+  else items.push({id:crypto.randomUUID ? crypto.randomUUID() : b64(crypto.getRandomValues(new Uint8Array(12))), created:Date.now(), ...data});
+  await persist();
+  $('editDlg').close(); $('eSerial').value = '';
+  render(); toast('保存しました');
+});
+
+// ---- バックアップ ----
+$('exportBtn').addEventListener('click', async () => {
+  const blob = await seal(key, salt, {items});
+  const url = URL.createObjectURL(new Blob([JSON.stringify(blob)], {type:'application/json'}));
+  const a = el('a', {href:url, download:`serial-backup-${new Date().toISOString().slice(0,10)}.json`});
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast('暗号化したバックアップを保存しました');
+});
+const pickFile = () => { $('fileIn').value = ''; $('fileIn').click(); };
+$('importBtn').addEventListener('click', pickFile);
+$('lockImportBtn').addEventListener('click', pickFile);
+$('fileIn').addEventListener('change', async () => {
+  const f = $('fileIn').files[0]; if (!f) return;
+  let blob;
+  try { blob = JSON.parse(await f.text()); } catch { return toast('ファイルを読み込めません'); }
+  if (!validBlob(blob)) return toast('このアプリのバックアップではありません');
+  const pw = prompt('バックアップ作成時のパスワードを入力してください');
+  if (pw == null) return;
+  let data, k;
+  try { k = await deriveKey(pw, unb64(blob.salt), blob.iter || PBKDF2_ITER); data = await open(k, blob); }
+  catch { return toast('パスワードが違うか、ファイルが壊れています'); }
+  const incoming = Array.isArray(data.items) ? data.items : [];
+  if (key){
+    // 開いている状態：現在のデータに統合（同じIDは新しい方を採用）
+    const map = new Map(items.map(i => [i.id, i]));
+    for (const it of incoming){ const cur = map.get(it.id); if (!cur || (it.updated || 0) > (cur.updated || 0)) map.set(it.id, it); }
+    items = [...map.values()];
+    await persist(); render();
+    toast(`${incoming.length}件を復元・統合しました`);
+  } else {
+    if (readStore() && !confirm('この端末の既存データをバックアップの内容で置き換えます。よろしいですか？')) return;
+    localStorage.setItem(STORE_KEY, JSON.stringify(blob));
+    key = k; salt = unb64(blob.salt); items = incoming;
+    showMain(); toast(`${incoming.length}件を復元しました`);
+  }
+});
+
+// ---- パスワード変更 ----
+$('pwBtn').addEventListener('click', () => { $('pwForm').reset(); $('pwErr').textContent = ''; $('pwDlg').showModal(); });
+$('pwCancel').addEventListener('click', () => $('pwDlg').close());
+$('pwForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const err = $('pwErr');
+  if ($('pwNew').value !== $('pwNew2').value) return err.textContent = '新しいパスワードが一致しません';
+  try { await open(await deriveKey($('pwOld').value, salt), readStore()); }
+  catch { return err.textContent = '現在のパスワードが違います'; }
+  salt = crypto.getRandomValues(new Uint8Array(16));
+  key = await deriveKey($('pwNew').value, salt);
+  await persist();
+  $('pwForm').reset(); $('pwDlg').close();
+  toast('パスワードを変更しました。古いバックアップは古いパスワードで開けます');
+});
+
+// ---- 全削除 ----
+$('wipeBtn').addEventListener('click', () => {
+  if (!confirm('この端末に保存されたすべてのシリアルを削除します。元に戻せません。よろしいですか？')) return;
+  if (prompt('確認のため「削除」と入力してください') !== '削除') return;
+  localStorage.removeItem(STORE_KEY);
+  showLock('すべてのデータを削除しました。');
+});
+
+// ---- トースト ----
+let toastT;
+function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 2400); }
+
+// ---- 起動 ----
+if (!window.crypto || !crypto.subtle){
+  document.body.replaceChildren(el('div', {class:'wrap'}, el('div', {class:'card lock'}, 'このブラウザでは暗号化機能が使えないため起動できません（https または端末内のファイルとして開いてください）。')));
+  return;
+}
+showLock();
+
+// オフライン対応（https で開いたときのみ）
+if ('serviceWorker' in navigator && location.protocol === 'https:'){
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+})();
+</script>
+</body>
+</html>
