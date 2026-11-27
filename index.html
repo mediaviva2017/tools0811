@@ -81,7 +81,7 @@ textarea{min-height:64px;resize:vertical}
 .stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px 14px;box-shadow:var(--shadow)}
 .stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
-.stat.c-unused b{color:var(--unused)} .stat.c-applied b{color:var(--applied)} .stat.c-won b{color:var(--won)}
+.stat.c-unused b{color:var(--unused)} .stat.c-won b{color:var(--won)} .stat.c-lost b{color:var(--lost)}
 .summary{margin-bottom:12px;overflow-x:auto}
 .summary table{border-collapse:collapse;width:100%;font-size:13px}
 .summary th,.summary td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
@@ -118,6 +118,7 @@ dialog form{padding:20px}
 dialog h2{font-size:17px;margin:0 0 4px}
 .hint{font-size:12px;color:var(--muted);margin-top:4px}
 .dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.newin{margin-top:6px}
 .evbox{border:1.5px solid var(--line);border-radius:16px;padding:4px 12px 12px;margin-top:10px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--card);padding:9px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
 .toast.show{opacity:1}
@@ -162,14 +163,13 @@ dialog h2{font-size:17px;margin:0 0 4px}
     <div class="stats" id="stats"></div>
 
     <div class="bar">
-      <input class="grow" id="q" type="search" placeholder="検索（アルバム・店舗・メンバー・メモ）" autocomplete="off">
+      <input class="grow" id="q" type="search" placeholder="検索（アルバム・店舗・イベント・メモ）" autocomplete="off">
     </div>
     <div class="bar">
       <select id="fEvent"></select>
       <select id="fStatus">
         <option value="">すべての状態</option>
         <option value="unused">未使用</option>
-        <option value="applied">結果待ち</option>
         <option value="won">当選</option>
         <option value="lost">落選</option>
       </select>
@@ -212,25 +212,32 @@ dialog h2{font-size:17px;margin:0 0 4px}
     <div class="section" id="usageSec">
       <h3>使いみち・結果</h3>
       <div class="grid2">
-        <div><label for="eStatus">状態</label>
+        <div><label for="eEvent">イベント</label><select id="eEvent"></select>
+          <input id="eEventNew" class="hidden newin" placeholder="イベント名を入力"></div>
+        <div><label for="eRegion">地域</label><select id="eRegion"></select>
+          <input id="eRegionNew" class="hidden newin" placeholder="地域を入力"></div>
+        <div><label for="eVenue">開催場所</label><select id="eVenue"></select>
+          <input id="eVenueNew" class="hidden newin" placeholder="例：幕張メッセ"></div>
+        <div><label for="eCategory">種類</label><select id="eCategory"></select>
+          <input id="eCategoryNew" class="hidden newin" placeholder="種類を入力"></div>
+        <div><label for="eDate">使用日</label><input id="eDate" type="date"></div>
+        <div id="eStatusWrap"><label for="eStatus">結果</label>
           <select id="eStatus">
             <option value="unused">未使用</option>
-            <option value="applied">使用済（結果待ち）</option>
             <option value="won">当選</option>
             <option value="lost">落選</option>
+            <option value="applied" id="eStatusApplied">結果未入力</option>
           </select></div>
-        <div><label for="eDate">使用日</label><input id="eDate" type="date"></div>
-        <div><label for="eEvent">イベント</label><select id="eEvent"></select></div>
-        <div><label for="eRegion">地域</label><select id="eRegion"></select></div>
-        <div><label for="eCategory">種類</label><select id="eCategory"></select></div>
-        <div><label for="eMember">メンバー・ユニット</label><input id="eMember" list="memberList" placeholder="個別・ユニットのとき"></div>
       </div>
+      <div class="hint">メニューにないものは「＋ 新しく入力」から追加できます（次回からメニューに出ます）</div>
     </div>
     <label for="eMemo">メモ</label>
-    <textarea id="eMemo" placeholder="例：第2次応募、整理番号など"></textarea>
+    <textarea id="eMemo" placeholder="例：何部目、整理番号など"></textarea>
     <div class="dlg-actions">
       <button class="btn" type="button" id="editCancel">キャンセル</button>
-      <button class="btn primary" type="submit">保存</button>
+      <button class="btn primary" type="submit" id="eSave">保存</button>
+      <button class="btn lost hidden" type="submit" id="eLost" data-status="lost">落選で記録</button>
+      <button class="btn primary hidden" type="submit" id="eWon" data-status="won">当選 ♡ で記録</button>
     </div>
   </form>
 </dialog>
@@ -258,7 +265,7 @@ dialog h2{font-size:17px;margin:0 0 4px}
 <dialog id="evDlg">
   <form id="evForm" method="dialog" autocomplete="off">
     <h2>イベント設定</h2>
-    <div class="hint">地域・種類は「、」か改行で区切って入力してください。</div>
+    <div class="hint">地域・開催場所・種類は「、」か改行で区切って入力してください。</div>
     <div id="evList"></div>
     <button class="btn small" type="button" id="evAdd" style="margin-top:10px">＋ イベントを追加</button>
     <div class="dlg-actions">
@@ -289,7 +296,6 @@ dialog h2{font-size:17px;margin:0 0 4px}
 <datalist id="albumList"></datalist>
 <datalist id="versionList"></datalist>
 <datalist id="shopList"></datalist>
-<datalist id="memberList"></datalist>
 <input type="file" id="fileIn" accept=".json,application/json" class="hidden">
 <div class="toast" id="toast"></div>
 
@@ -303,8 +309,8 @@ const IDLE_LOCK_MS = 5 * 60 * 1000;      // 5分操作がなければ自動ロ�
 const HIDDEN_LOCK_MS = 60 * 1000;        // 1分以上バックグラウンドならロック
 const CLIP_CLEAR_MS = 30 * 1000;         // コピーしたシリアルを30秒後に消去（可能な場合）
 
-const STATUS = {unused:'未使用', applied:'結果待ち', won:'当選', lost:'落選'};
-const MEMBERS = ['バンチャン','リノ','チャンビン','ヒョンジン','ハン','フィリックス','スンミン','アイエン','3RACHA','DANCERACHA','VOCALRACHA'];
+const STATUS = {unused:'未使用', applied:'結果未入力', won:'当選', lost:'落選'};
+const NEW = '__new__';
 const DEFAULT_EVENTS = [{
   id:'ev-suiatsu', name:'SUIATSU',
   regions:['関東','関西'],
@@ -438,10 +444,19 @@ const splitList = s => s.split(/[、,，\n]/).map(x => x.trim()).filter(Boolean)
 const uniq = arr => [...new Set(arr.filter(Boolean))];
 const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
 const eventByName = name => events.find(e => e.name === name);
-function setOptions(sel, values, placeholder, current){
+function setOptions(sel, values, placeholder, current, allowNew){
   const vals = uniq([...values, current]);
-  sel.replaceChildren(el('option', {value:''}, placeholder), ...vals.map(v => el('option', {value:v}, v)));
+  sel.replaceChildren(el('option', {value:''}, placeholder), ...vals.map(v => el('option', {value:v}, v)),
+    allowNew ? el('option', {value:NEW}, '＋ 新しく入力…') : null);
   sel.value = current || '';
+}
+// メニュー＋自由入力の組み合わせ
+const combo = id => ({sel:$(id), inp:$(id + 'New')});
+function comboValue(id){ const c = combo(id); return c.sel.value === NEW ? c.inp.value.trim() : c.sel.value; }
+function comboToggle(id){
+  const c = combo(id), on = c.sel.value === NEW;
+  c.inp.classList.toggle('hidden', !on);
+  if (on) { c.inp.value = ''; c.inp.focus(); }
 }
 
 // ---- 表示 ----
@@ -449,7 +464,7 @@ function render(){
   if (!key) return;
   const cnt = {all:items.length, unused:0, applied:0, won:0, lost:0};
   for (const it of items) cnt[it.status] = (cnt[it.status] || 0) + 1;
-  $('stats').replaceChildren(...[['all','合計'],['unused','未使用'],['applied','結果待ち'],['won','当選']].map(([k, l]) =>
+  $('stats').replaceChildren(...[['all','合計'],['unused','未使用'],['won','当選'],['lost','落選']].map(([k, l]) =>
     el('div', {class:'stat c-' + k}, el('b', {}, String(cnt[k] || 0)), el('span', {}, l))));
 
   // 入力候補
@@ -457,7 +472,6 @@ function render(){
   fill('albumList', items.map(i => i.album));
   fill('versionList', items.map(i => i.version));
   fill('shopList', items.map(i => i.shop));
-  fill('memberList', [...MEMBERS, ...items.map(i => i.member)]);
 
   // イベント絞り込み
   const fe = $('fEvent'), cur = fe.value;
@@ -469,7 +483,7 @@ function render(){
   const shown = items
     .filter(i => !fs || i.status === fs)
     .filter(i => !fev || i.event === fev)
-    .filter(i => !q || [i.album, i.version, i.shop, i.event, i.region, i.category, i.member, i.memo].some(v => (v || '').toLowerCase().includes(q)))
+    .filter(i => !q || [i.album, i.version, i.shop, i.event, i.region, i.venue, i.category, i.memo].some(v => (v || '').toLowerCase().includes(q)))
     .sort((a, b) => (b.updated || 0) - (a.updated || 0));
 
   if (!shown.length){
@@ -482,10 +496,10 @@ function render(){
 function itemCard(it){
   const shownFull = revealed.has(it.id);
   const meta = [it.version, it.shop].filter(Boolean).join(' ・ ');
-  const usage = [it.region, it.category, it.member].filter(Boolean);
+  const usage = [it.region, it.venue, it.category].filter(Boolean);
   const actions = [];
   if (it.status === 'unused') actions.push(el('button', {class:'btn small use', onclick:() => openEdit(it.id, 'use')}, '使う'));
-  if (it.status === 'applied'){
+  if (it.status === 'applied'){ // 旧データ（結果未入力）
     actions.push(el('button', {class:'btn small won', onclick:() => setStatus(it.id, 'won')}, '当選 ♡'));
     actions.push(el('button', {class:'btn small lost', onclick:() => setStatus(it.id, 'lost')}, '落選'));
   }
@@ -561,12 +575,18 @@ async function removeItem(id){
 const newId = () => crypto.randomUUID ? crypto.randomUUID() : b64(crypto.getRandomValues(new Uint8Array(12)));
 
 // 地域・種類の選択肢をイベントに合わせて切り替え
-function syncUsageSelects(region, category){
+function syncUsageSelects(region, category, venue){
   const ev = eventByName($('eEvent').value);
-  setOptions($('eRegion'), ev ? ev.regions : [], '—', region);
-  setOptions($('eCategory'), ev ? ev.categories : [], '—', category);
+  setOptions($('eVenue'), ev ? (ev.venues || []) : [], '—', venue, true);
+  comboToggle('eVenue');
+  setOptions($('eRegion'), ev ? ev.regions : [], '—', region, true);
+  setOptions($('eCategory'), ev ? ev.categories : [], '—', category, true);
+  comboToggle('eRegion'); comboToggle('eCategory');
 }
-$('eEvent').addEventListener('change', () => syncUsageSelects($('eRegion').value, $('eCategory').value));
+$('eEvent').addEventListener('change', () => { comboToggle('eEvent'); syncUsageSelects(comboValue('eRegion'), comboValue('eCategory'), comboValue('eVenue')); });
+$('eVenue').addEventListener('change', () => comboToggle('eVenue'));
+$('eRegion').addEventListener('change', () => comboToggle('eRegion'));
+$('eCategory').addEventListener('change', () => comboToggle('eCategory'));
 $('eStatus').addEventListener('change', () => { if ($('eStatus').value !== 'unused' && !$('eDate').value) $('eDate').value = today(); });
 
 function openEdit(id, mode){
@@ -578,13 +598,19 @@ function openEdit(id, mode){
   $('eAlbum').value = it.album || '';
   $('eVersion').value = it.version || '';
   $('eShop').value = it.shop || '';
-  $('eStatus').value = use ? 'applied' : (it.status || 'unused');
+  $('eStatusApplied').hidden = it.status !== 'applied';  // 旧データ用
+  $('eStatus').value = it.status || 'unused';
+  $('eStatusWrap').classList.toggle('hidden', use);
+  $('eSave').classList.toggle('hidden', use);
+  $('eWon').classList.toggle('hidden', !use);
+  $('eLost').classList.toggle('hidden', !use);
   $('eDate').value = it.date || (use ? today() : '');
   // 使うときは前回使ったイベントを初期値に
-  const lastEv = use && !it.event ? (items.filter(i => i.event).sort((a, b) => b.updated - a.updated)[0] || {}).event : '';
-  setOptions($('eEvent'), events.map(e => e.name), '—', it.event || lastEv || '');
-  syncUsageSelects(it.region || '', it.category || '');
-  $('eMember').value = it.member || '';
+  const last = use && !it.event ? (items.filter(i => i.event && i.status !== 'unused').sort((a, b) => b.updated - a.updated)[0] || {}) : {};
+  const lastEv = last.event || '';
+  setOptions($('eEvent'), events.map(e => e.name), '—', it.event || lastEv || '', true);
+  comboToggle('eEvent');
+  syncUsageSelects(it.region || last.region || '', it.category || '', it.venue || last.venue || '');
   $('eMemo').value = it.memo || '';
   $('editDlg').showModal();
   if (use) $('usageSec').scrollIntoView({block:'start'}); else if (!id) $('eSerial').focus();
@@ -597,17 +623,27 @@ $('editForm').addEventListener('submit', async e => {
   if (!serial) return;
   const dup = items.find(i => i.serial.toUpperCase() === serial.toUpperCase() && i.id !== editingId);
   if (dup && !confirm('同じシリアルがすでに登録されています。保存しますか？')) return;
+  const status = (e.submitter && e.submitter.dataset.status) || $('eStatus').value;
   const data = {
     serial, album:$('eAlbum').value.trim(), version:$('eVersion').value.trim(), shop:$('eShop').value.trim(),
-    status:$('eStatus').value, date:$('eDate').value,
-    event:$('eEvent').value, region:$('eRegion').value, category:$('eCategory').value, member:$('eMember').value.trim(),
+    status, date:$('eDate').value || (status !== 'unused' ? today() : ''),
+    event:comboValue('eEvent'), region:comboValue('eRegion'), category:comboValue('eCategory'), venue:comboValue('eVenue'),
     memo:$('eMemo').value.trim(), updated:Date.now()
   };
+  // メニューにない入力はイベント設定に追加して次回から選べるように
+  if (data.event){
+    let ev = eventByName(data.event);
+    if (!ev) { ev = {id:newId(), name:data.event, regions:[], categories:[], venues:[]}; events.push(ev); }
+    ev.venues = ev.venues || [];
+    if (data.venue && !ev.venues.includes(data.venue)) ev.venues.push(data.venue);
+    if (data.region && !ev.regions.includes(data.region)) ev.regions.push(data.region);
+    if (data.category && !ev.categories.includes(data.category)) ev.categories.push(data.category);
+  }
   if (editingId) Object.assign(items.find(i => i.id === editingId), data);
   else items.push({id:newId(), created:Date.now(), ...data});
   await persist();
   $('editDlg').close();
-  render(); toast('保存しました');
+  render(); toast(status === 'won' ? 'おめでとう〜！♡' : '保存しました');
 });
 
 // ---- まとめて追加 ----
@@ -636,6 +672,7 @@ function evRow(ev){
   return el('div', {class:'evbox', 'data-id':ev.id},
     el('label', {}, 'イベント名'), el('input', {class:'evName', value:ev.name || '', placeholder:'例：SUIATSU'}),
     el('label', {}, '地域'), el('input', {class:'evRegions', value:(ev.regions || []).join('、'), placeholder:'例：関東、関西'}),
+    el('label', {}, '開催場所'), el('input', {class:'evVenues', value:(ev.venues || []).join('、'), placeholder:'例：幕張メッセ、インテックス大阪'}),
     el('label', {}, '種類'), el('textarea', {class:'evCats', placeholder:'例：個別ハイタッチ、全員サイン会'}),
     el('button', {class:'btn small danger', type:'button', style:'margin-top:8px', onclick:e => e.target.closest('.evbox').remove()}, 'このイベントを削除'));
 }
@@ -654,7 +691,7 @@ $('evForm').addEventListener('submit', async e => {
     const old = events.find(ev => ev.id === box.dataset.id);
     // イベント名を変えたら、登録済みシリアルの表記も合わせて変更
     if (old && old.name !== name) items.forEach(i => { if (i.event === old.name) i.event = name; });
-    next.push({id:box.dataset.id, name, regions:splitList(box.querySelector('.evRegions').value), categories:splitList(box.querySelector('.evCats').value)});
+    next.push({id:box.dataset.id, name, regions:splitList(box.querySelector('.evRegions').value), venues:splitList(box.querySelector('.evVenues').value), categories:splitList(box.querySelector('.evCats').value)});
   }
   events = next;
   await persist();
