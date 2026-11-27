@@ -7,82 +7,122 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src 'self' data:; manifest-src 'self'; worker-src 'self'; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#111114">
+<meta name="theme-color" content="#fff0f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d1424" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="シリアル">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>シリアル管理</title>
 <style>
 :root{
-  --bg:#f6f5f2;--card:#ffffff;--text:#1b1b1f;--muted:#6b6b75;--line:#e3e2dd;
-  --accent:#c8102e;--accent-weak:#fbe9ec;--ok:#1f7a4d;--ok-weak:#e4f3eb;
-  --warn:#9a6700;--warn-weak:#fdf3d8;--info:#2457a6;--info-weak:#e6eefb;--gray-weak:#efefef;
+  --bg:#fff0f5; --bg2:#f4ecff;
+  --card:#ffffff; --text:#4a3a4f; --muted:#9b8aa3; --line:#f3d9e6;
+  --accent:#ff6f9f; --accent2:#b493ff; --accent-weak:#ffe3ee;
+  --field:#fff8fb;
+  --unused:#7c5cd6; --unused-bg:#efe8ff;
+  --applied:#c47a00; --applied-bg:#fff2cf;
+  --won:#e8467c; --won-bg:#ffdbe8;
+  --lost:#8f8696; --lost-bg:#f0edf2;
+  --shadow:0 4px 14px rgba(255,111,159,.12);
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#111114;--card:#1b1b20;--text:#ececf1;--muted:#9a9aa6;--line:#2c2c34;
-    --accent:#ff4d64;--accent-weak:#3a1820;--ok:#5fd39a;--ok-weak:#14301f;
-    --warn:#f2c14e;--warn-weak:#3a2f12;--info:#7aa7ff;--info-weak:#17243d;--gray-weak:#26262d;
+    --bg:#1d1424; --bg2:#22172e;
+    --card:#2a1f33; --text:#f6e9f3; --muted:#b9a3c2; --line:#3d2e48;
+    --accent:#ff86b0; --accent2:#c3a8ff; --accent-weak:#47253a;
+    --field:#231a2b;
+    --unused:#c3a8ff; --unused-bg:#352a4d;
+    --applied:#ffd36b; --applied-bg:#40351c;
+    --won:#ff86b0; --won-bg:#4d2338;
+    --lost:#a99db1; --lost-bg:#332b3a;
+    --shadow:none;
   }
 }
 *{box-sizing:border-box}
 html,body{margin:0}
-body{padding-top:env(safe-area-inset-top);background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP","Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+body{
+  padding-top:env(safe-area-inset-top);
+  background:linear-gradient(180deg,var(--bg) 0%,var(--bg2) 100%) fixed;
+  background-color:var(--bg);color:var(--text);
+  font:15px/1.6 Meiryo,"メイリオ","Hiragino Maru Gothic ProN","ヒラギノ丸ゴ ProN","Hiragino Sans",sans-serif;
+  -webkit-text-size-adjust:100%;
+}
 button,input,select,textarea{font:inherit;color:inherit}
 .wrap{max-width:880px;margin:0 auto;padding:16px 16px 80px}
-h1{font-size:20px;margin:4px 0 16px;letter-spacing:.02em}
+h1{font-size:20px;margin:4px 0 16px;letter-spacing:.04em}
+h1 .heart{color:var(--accent)}
 h1 small{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:var(--shadow)}
 .lock{max-width:420px;margin:12vh auto 0}
 .lock p{color:var(--muted);font-size:13px;margin:6px 0 14px}
-label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px}
-input,select,textarea{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);outline:none}
+label{display:block;font-size:12px;color:var(--muted);margin:10px 0 4px;font-weight:bold}
+input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--line);border-radius:14px;background:var(--field);outline:none;-webkit-appearance:none;appearance:none}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 16px) 55%,calc(100% - 11px) 55%;background-size:5px 5px;background-repeat:no-repeat;padding-right:28px}
 input:focus,select:focus,textarea:focus{border-color:var(--accent)}
 textarea{min-height:64px;resize:vertical}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
-.btn:hover{border-color:var(--muted)}
-.btn.primary{background:var(--accent);border-color:var(--accent);color:#fff}
-.btn.small{padding:5px 9px;font-size:13px;border-radius:8px}
-.btn.danger{color:var(--accent)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:#fff;font-weight:bold}
+.btn.small{padding:5px 11px;font-size:13px}
+.btn.danger{color:var(--won)}
 .btn.block{width:100%;margin-top:14px}
-.err{color:var(--accent);font-size:13px;min-height:1.4em;margin-top:8px}
+.btn.won{background:var(--won-bg);color:var(--won);border-color:transparent}
+.btn.lost{background:var(--lost-bg);color:var(--lost);border-color:transparent}
+.btn.use{background:var(--applied-bg);color:var(--applied);border-color:transparent}
+.err{color:var(--won);font-size:13px;min-height:1.4em;margin-top:8px}
 .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px}
 .bar .grow{flex:1 1 200px}
+.bar select{width:auto;flex:1 1 130px}
 .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:10px 14px;box-shadow:var(--shadow)}
 .stat b{display:block;font-size:22px;font-variant-numeric:tabular-nums}
 .stat span{font-size:12px;color:var(--muted)}
-.list{display:flex;flex-direction:column;gap:8px}
-.item{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.stat.c-unused b{color:var(--unused)} .stat.c-applied b{color:var(--applied)} .stat.c-won b{color:var(--won)}
+.summary{margin-bottom:12px;overflow-x:auto}
+.summary table{border-collapse:collapse;width:100%;font-size:13px}
+.summary th,.summary td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
+.summary th:first-child,.summary td:first-child{text-align:left}
+.summary thead th{color:var(--muted);font-weight:bold}
+.summary .w{color:var(--won);font-weight:bold}
+.summary .z{color:var(--muted)}
+.summary h3{font-size:14px;margin:0 0 6px}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:14px 16px;box-shadow:var(--shadow)}
+.item.st-won{border-color:var(--accent)}
 .item .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
-.item .title{font-weight:600;word-break:break-word}
+.item .title{font-weight:bold;word-break:break-word}
 .item .meta{font-size:12px;color:var(--muted);margin-top:2px;word-break:break-word}
+.usage{display:flex;flex-wrap:wrap;gap:4px;margin-top:8px}
+.chip{font-size:12px;padding:2px 10px;border-radius:999px;background:var(--accent-weak);color:var(--text)}
+.chip.ev{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:bold}
 .serial{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
-.serial code{font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--gray-weak);padding:5px 9px;border-radius:8px;letter-spacing:.06em;word-break:break-all}
-.pill{font-size:12px;padding:2px 9px;border-radius:999px;white-space:nowrap}
-.s-unused{background:var(--info-weak);color:var(--info)}
-.s-applied{background:var(--warn-weak);color:var(--warn)}
-.s-won{background:var(--ok-weak);color:var(--ok)}
-.s-lost{background:var(--gray-weak);color:var(--muted)}
+.serial code{font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--field);border:1px dashed var(--line);padding:5px 10px;border-radius:10px;letter-spacing:.06em;word-break:break-all}
+.pill{font-size:12px;padding:3px 10px;border-radius:999px;white-space:nowrap;font-weight:bold}
+.s-unused{background:var(--unused-bg);color:var(--unused)}
+.s-applied{background:var(--applied-bg);color:var(--applied)}
+.s-won{background:var(--won-bg);color:var(--won)}
+.s-lost{background:var(--lost-bg);color:var(--lost)}
 .memo{font-size:13px;margin-top:6px;white-space:pre-wrap;word-break:break-word}
-.actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.actions{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;align-items:center}
 .empty{text-align:center;color:var(--muted);padding:40px 0}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
-dialog{border:1px solid var(--line);border-radius:16px;background:var(--card);color:var(--text);padding:0;width:min(560px,calc(100vw - 32px));max-height:calc(100vh - 32px)}
-dialog::backdrop{background:rgba(0,0,0,.45)}
-dialog form{padding:18px}
+.section{margin-top:14px;padding-top:12px;border-top:1.5px dashed var(--line)}
+.section h3{font-size:14px;margin:0;color:var(--accent)}
+dialog{border:1px solid var(--line);border-radius:24px;background:var(--card);color:var(--text);padding:0;width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 24px)}
+dialog::backdrop{background:rgba(74,58,79,.4)}
+dialog form{padding:20px}
 dialog h2{font-size:17px;margin:0 0 4px}
-.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}
+.evbox{border:1.5px solid var(--line);border-radius:16px;padding:4px 12px 12px;margin-top:10px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--text);color:var(--card);padding:9px 18px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:10}
 .toast.show{opacity:1}
 .foot{font-size:12px;color:var(--muted);margin-top:18px}
 .hidden{display:none!important}
-.check{display:flex;gap:8px;align-items:center;font-size:13px;color:var(--muted);margin-top:10px}
-.check input{width:auto}
 @media (max-width:560px){
   .stats{grid-template-columns:repeat(2,1fr)}
   .grid2{grid-template-columns:1fr}
@@ -94,7 +134,7 @@ dialog h2{font-size:17px;margin:0 0 4px}
 
   <!-- ロック画面 -->
   <section id="lockView" class="card lock hidden">
-    <h1>シリアル管理 <small>🔒 ロック中</small></h1>
+    <h1>シリアル管理 <span class="heart">♡</span> <small>ロック中</small></h1>
     <p id="lockMsg"></p>
     <form id="lockForm" autocomplete="off">
       <label for="pw1">パスワード</label>
@@ -106,7 +146,7 @@ dialog h2{font-size:17px;margin:0 0 4px}
       <div id="lockErr" class="err"></div>
       <button class="btn primary block" id="lockBtn" type="submit">開く</button>
     </form>
-    <div id="importFromLock" class="foot">
+    <div class="foot">
       <button class="btn small" id="lockImportBtn" type="button">バックアップから復元</button>
     </div>
   </section>
@@ -114,22 +154,32 @@ dialog h2{font-size:17px;margin:0 0 4px}
   <!-- メイン画面 -->
   <section id="mainView" class="hidden">
     <div class="bar">
-      <h1 style="margin:0;flex:1">シリアル管理</h1>
-      <button class="btn" id="lockNow" title="今すぐロック">🔒 ロック</button>
+      <h1 style="margin:0;flex:1">シリアル管理 <span class="heart">♡</span></h1>
+      <button class="btn small" id="eventsBtn">イベント設定</button>
+      <button class="btn small" id="lockNow">ロック</button>
     </div>
 
     <div class="stats" id="stats"></div>
 
     <div class="bar">
-      <input class="grow" id="q" type="search" placeholder="アルバム・店舗・イベント・メモで検索" autocomplete="off">
-      <select id="fStatus" style="width:auto">
+      <input class="grow" id="q" type="search" placeholder="検索（アルバム・店舗・メンバー・メモ）" autocomplete="off">
+    </div>
+    <div class="bar">
+      <select id="fEvent"></select>
+      <select id="fStatus">
         <option value="">すべての状態</option>
         <option value="unused">未使用</option>
-        <option value="applied">応募済</option>
+        <option value="applied">結果待ち</option>
         <option value="won">当選</option>
         <option value="lost">落選</option>
       </select>
+    </div>
+
+    <div id="summary" class="card summary hidden"></div>
+
+    <div class="bar">
       <button class="btn primary" id="addBtn">＋ 追加</button>
+      <button class="btn" id="bulkBtn">＋ まとめて追加</button>
     </div>
 
     <div class="list" id="list"></div>
@@ -141,54 +191,79 @@ dialog h2{font-size:17px;margin:0 0 4px}
         <button class="btn small" id="pwBtn">パスワード変更</button>
         <button class="btn small danger" id="wipeBtn">全データ削除</button>
       </div>
-      データはこの端末のブラウザ内にだけ、パスワードで暗号化（AES-256）して保存されます。外部への送信はしません。
-      <span id="idleInfo"></span>
+      データはこの端末のブラウザ内にだけ、パスワードで暗号化（AES-256）して保存されます。外部への送信はしません。5分間操作がないと自動でロックされます。
     </div>
   </section>
 </div>
 
-<!-- 追加・編集ダイアログ -->
+<!-- 追加・編集・使用ダイアログ -->
 <dialog id="editDlg">
   <form id="editForm" method="dialog" autocomplete="off">
     <h2 id="editTitle">シリアルを追加</h2>
     <label for="eSerial">シリアルコード *</label>
-    <input id="eSerial" required spellcheck="false" autocapitalize="characters" style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em">
+    <input id="eSerial" required spellcheck="false" autocapitalize="characters" autocorrect="off" style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em">
+    <div class="hint">iPhone：入力欄をタップ →「テキストをスキャン」でカメラから読み取れます</div>
     <div class="grid2">
-      <div>
-        <label for="eAlbum">アルバム</label>
-        <input id="eAlbum" list="albumList" placeholder="例：★★★★★ (5-STAR)">
-      </div>
-      <div>
-        <label for="eVersion">バージョン</label>
-        <input id="eVersion" placeholder="例：通常盤 / 限定盤A">
-      </div>
-      <div>
-        <label for="eShop">購入店舗</label>
-        <input id="eShop" list="shopList" placeholder="例：タワレコ">
-      </div>
-      <div>
-        <label for="eEvent">用途・イベント</label>
-        <input id="eEvent" list="eventList" placeholder="例：サイン会 / ヨントン">
-      </div>
-      <div>
-        <label for="eStatus">状態</label>
-        <select id="eStatus">
-          <option value="unused">未使用</option>
-          <option value="applied">応募済</option>
-          <option value="won">当選</option>
-          <option value="lost">落選</option>
-        </select>
-      </div>
-      <div>
-        <label for="eDate">応募日・使用日</label>
-        <input id="eDate" type="date">
+      <div><label for="eAlbum">アルバム</label><input id="eAlbum" list="albumList"></div>
+      <div><label for="eVersion">バージョン</label><input id="eVersion" list="versionList" placeholder="例：通常盤 / 限定盤A"></div>
+      <div><label for="eShop">購入店舗</label><input id="eShop" list="shopList" placeholder="例：タワレコ"></div>
+    </div>
+
+    <div class="section" id="usageSec">
+      <h3>使いみち・結果</h3>
+      <div class="grid2">
+        <div><label for="eStatus">状態</label>
+          <select id="eStatus">
+            <option value="unused">未使用</option>
+            <option value="applied">使用済（結果待ち）</option>
+            <option value="won">当選</option>
+            <option value="lost">落選</option>
+          </select></div>
+        <div><label for="eDate">使用日</label><input id="eDate" type="date"></div>
+        <div><label for="eEvent">イベント</label><select id="eEvent"></select></div>
+        <div><label for="eRegion">地域</label><select id="eRegion"></select></div>
+        <div><label for="eCategory">種類</label><select id="eCategory"></select></div>
+        <div><label for="eMember">メンバー・ユニット</label><input id="eMember" list="memberList" placeholder="個別・ユニットのとき"></div>
       </div>
     </div>
     <label for="eMemo">メモ</label>
-    <textarea id="eMemo"></textarea>
+    <textarea id="eMemo" placeholder="例：第2次応募、整理番号など"></textarea>
     <div class="dlg-actions">
       <button class="btn" type="button" id="editCancel">キャンセル</button>
-      <button class="btn primary" type="submit" value="save">保存</button>
+      <button class="btn primary" type="submit">保存</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- まとめて追加ダイアログ -->
+<dialog id="bulkDlg">
+  <form id="bulkForm" method="dialog" autocomplete="off">
+    <h2>まとめて追加</h2>
+    <label for="bSerials">シリアルコード（1行に1つ）</label>
+    <textarea id="bSerials" required spellcheck="false" autocapitalize="characters" autocorrect="off" style="min-height:140px;font-family:ui-monospace,Menlo,Consolas,monospace"></textarea>
+    <div class="grid2">
+      <div><label for="bAlbum">アルバム</label><input id="bAlbum" list="albumList"></div>
+      <div><label for="bVersion">バージョン</label><input id="bVersion" list="versionList"></div>
+      <div><label for="bShop">購入店舗</label><input id="bShop" list="shopList"></div>
+    </div>
+    <div class="hint">すべて「未使用」で登録されます。すでに登録済みのシリアルはスキップします。</div>
+    <div class="dlg-actions">
+      <button class="btn" type="button" id="bulkCancel">キャンセル</button>
+      <button class="btn primary" type="submit">登録</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- イベント設定ダイアログ -->
+<dialog id="evDlg">
+  <form id="evForm" method="dialog" autocomplete="off">
+    <h2>イベント設定</h2>
+    <div class="hint">地域・種類は「、」か改行で区切って入力してください。</div>
+    <div id="evList"></div>
+    <button class="btn small" type="button" id="evAdd" style="margin-top:10px">＋ イベントを追加</button>
+    <div class="dlg-actions">
+      <button class="btn" type="button" id="evCancel">キャンセル</button>
+      <button class="btn primary" type="submit">保存</button>
     </div>
   </form>
 </dialog>
@@ -212,8 +287,9 @@ dialog h2{font-size:17px;margin:0 0 4px}
 </dialog>
 
 <datalist id="albumList"></datalist>
+<datalist id="versionList"></datalist>
 <datalist id="shopList"></datalist>
-<datalist id="eventList"></datalist>
+<datalist id="memberList"></datalist>
 <input type="file" id="fileIn" accept=".json,application/json" class="hidden">
 <div class="toast" id="toast"></div>
 
@@ -227,26 +303,30 @@ const IDLE_LOCK_MS = 5 * 60 * 1000;      // 5分操作がなければ自動ロ�
 const HIDDEN_LOCK_MS = 60 * 1000;        // 1分以上バックグラウンドならロック
 const CLIP_CLEAR_MS = 30 * 1000;         // コピーしたシリアルを30秒後に消去（可能な場合）
 
-const STATUS = {unused:'未使用', applied:'応募済', won:'当選', lost:'落選'};
+const STATUS = {unused:'未使用', applied:'結果待ち', won:'当選', lost:'落選'};
+const MEMBERS = ['バンチャン','リノ','チャンビン','ヒョンジン','ハン','フィリックス','スンミン','アイエン','3RACHA','DANCERACHA','VOCALRACHA'];
+const DEFAULT_EVENTS = [{
+  id:'ev-suiatsu', name:'SUIATSU',
+  regions:['関東','関西'],
+  categories:['個別ハイタッチ','個別サイン','ユニットハイタッチ','全員サイン会','全員トークショー']
+}];
 const $ = id => document.getElementById(id);
 
 // ---- 状態（鍵とデータはメモリ上のみ。ロック時に破棄） ----
-let key = null;       // 非エクスポートの CryptoKey
-let salt = null;
-let items = [];
+let key = null, salt = null;
+let items = [], events = [];
 let revealed = new Set();
 let editingId = null;
 let idleTimer = null, hiddenAt = 0;
 
-// ---- 暗号化ユーティリティ ----
+// ---- 暗号化 ----
 const enc = new TextEncoder(), dec = new TextDecoder();
 const b64 = buf => btoa(String.fromCharCode(...new Uint8Array(buf)));
 const unb64 = s => Uint8Array.from(atob(s), c => c.charCodeAt(0));
 
 async function deriveKey(password, saltBytes, iter = PBKDF2_ITER){
   const base = await crypto.subtle.importKey('raw', enc.encode(password.normalize('NFKC')), 'PBKDF2', false, ['deriveKey']);
-  return crypto.subtle.deriveKey(
-    {name:'PBKDF2', salt:saltBytes, iterations:iter, hash:'SHA-256'},
+  return crypto.subtle.deriveKey({name:'PBKDF2', salt:saltBytes, iterations:iter, hash:'SHA-256'},
     base, {name:'AES-GCM', length:256}, false, ['encrypt','decrypt']);
 }
 async function seal(k, s, data){
@@ -254,30 +334,32 @@ async function seal(k, s, data){
   const ct = await crypto.subtle.encrypt({name:'AES-GCM', iv}, k, enc.encode(JSON.stringify(data)));
   return {app:'skz-serial', v:1, kdf:'PBKDF2-SHA256', iter:PBKDF2_ITER, salt:b64(s), iv:b64(iv), ct:b64(ct)};
 }
-async function open(k, blob){
+async function unseal(k, blob){
   const pt = await crypto.subtle.decrypt({name:'AES-GCM', iv:unb64(blob.iv)}, k, unb64(blob.ct));
   return JSON.parse(dec.decode(pt));
 }
-function validBlob(b){
-  return b && b.app === 'skz-serial' && b.v === 1 && typeof b.salt === 'string' && typeof b.iv === 'string' && typeof b.ct === 'string';
-}
+const validBlob = b => b && b.app === 'skz-serial' && b.v === 1 && typeof b.salt === 'string' && typeof b.iv === 'string' && typeof b.ct === 'string';
 
 // ---- 保存 ----
 function readStore(){
-  try { const raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : null; }
-  catch { return null; }
+  try { const raw = localStorage.getItem(STORE_KEY); return raw ? JSON.parse(raw) : null; } catch { return null; }
+}
+const snapshot = () => ({items, events});
+function load(data){
+  items = Array.isArray(data.items) ? data.items : [];
+  events = Array.isArray(data.events) ? data.events : structuredClone(DEFAULT_EVENTS);
 }
 async function persist(){
-  const blob = await seal(key, salt, {items});
+  const blob = await seal(key, salt, snapshot());
   try { localStorage.setItem(STORE_KEY, JSON.stringify(blob)); }
   catch { toast('保存に失敗しました。バックアップを保存してください'); }
 }
 
 // ---- 画面切替 ----
 function showLock(msg){
-  key = null; items = []; revealed.clear(); salt = null;
-  $('list').replaceChildren(); $('stats').replaceChildren();
-  closeDialogs();
+  key = null; salt = null; items = []; events = []; revealed.clear();
+  $('list').replaceChildren(); $('stats').replaceChildren(); $('summary').replaceChildren();
+  for (const d of document.querySelectorAll('dialog')) if (d.open) d.close();
   $('mainView').classList.add('hidden');
   $('lockView').classList.remove('hidden');
   const exists = !!readStore();
@@ -290,15 +372,12 @@ function showLock(msg){
     : 'はじめにパスワードを設定します（8文字以上）。このパスワードを忘れるとデータは復元できません。');
   $('lockErr').textContent = '';
   $('pw1').value = ''; $('pw2').value = '';
-  setTimeout(() => $('pw1').focus(), 50);
 }
 function showMain(){
   $('lockView').classList.add('hidden');
   $('mainView').classList.remove('hidden');
-  render();
-  bumpIdle();
+  render(); bumpIdle();
 }
-function closeDialogs(){ for (const d of document.querySelectorAll('dialog')) if (d.open) d.close(); }
 
 // ---- ロック解除 ----
 $('lockForm').addEventListener('submit', async e => {
@@ -313,13 +392,13 @@ $('lockForm').addEventListener('submit', async e => {
       if (pw !== $('pw2').value) { err.textContent = '確認用パスワードが一致しません'; return; }
       salt = crypto.getRandomValues(new Uint8Array(16));
       key = await deriveKey(pw, salt);
-      items = [];
+      load({});
       await persist();
     } else {
       if (!validBlob(stored)) { err.textContent = '保存データが壊れています'; return; }
       salt = unb64(stored.salt);
       const k = await deriveKey(pw, salt, stored.iter || PBKDF2_ITER);
-      try { const data = await open(k, stored); key = k; items = Array.isArray(data.items) ? data.items : []; }
+      try { load(await unseal(k, stored)); key = k; }
       catch { await new Promise(r => setTimeout(r, 600)); err.textContent = 'パスワードが違います'; return; }
     }
     $('pw1').value = ''; $('pw2').value = '';
@@ -342,13 +421,8 @@ document.addEventListener('visibilitychange', () => {
   if (document.hidden) { hiddenAt = Date.now(); revealed.clear(); if (key) render(); }
   else if (key && hiddenAt && Date.now() - hiddenAt > HIDDEN_LOCK_MS) showLock('バックグラウンドにあったためロックしました。');
 });
-$('idleInfo').textContent = `5分間操作がないと自動でロックされます。`;
 
-// ---- 表示 ----
-function mask(s){
-  if (s.length <= 4) return '•'.repeat(s.length);
-  return '•'.repeat(Math.max(4, s.length - 4)) + s.slice(-4);
-}
+// ---- 小道具 ----
 function el(tag, props = {}, ...kids){
   const n = document.createElement(tag);
   for (const [k, v] of Object.entries(props)){
@@ -356,57 +430,111 @@ function el(tag, props = {}, ...kids){
     else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
     else n.setAttribute(k, v);
   }
-  for (const c of kids) if (c != null && c !== false) n.append(c);  // 文字列は常にテキストノード（HTMLとして解釈しない）
+  for (const c of kids) if (c != null && c !== false) n.append(c);  // 文字列は常にテキスト扱い（HTMLとして解釈しない）
   return n;
 }
+const mask = s => s.length <= 4 ? '•'.repeat(s.length) : '•'.repeat(Math.max(4, s.length - 4)) + s.slice(-4);
+const splitList = s => s.split(/[、,，\n]/).map(x => x.trim()).filter(Boolean);
+const uniq = arr => [...new Set(arr.filter(Boolean))];
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10); };
+const eventByName = name => events.find(e => e.name === name);
+function setOptions(sel, values, placeholder, current){
+  const vals = uniq([...values, current]);
+  sel.replaceChildren(el('option', {value:''}, placeholder), ...vals.map(v => el('option', {value:v}, v)));
+  sel.value = current || '';
+}
+
+// ---- 表示 ----
 function render(){
   if (!key) return;
-  // 統計
   const cnt = {all:items.length, unused:0, applied:0, won:0, lost:0};
   for (const it of items) cnt[it.status] = (cnt[it.status] || 0) + 1;
-  $('stats').replaceChildren(
-    ...[['all','合計'],['unused','未使用'],['applied','応募済'],['won','当選']].map(([k, l]) =>
-      el('div', {class:'stat'}, el('b', {}, String(cnt[k] || 0)), el('span', {}, l))));
+  $('stats').replaceChildren(...[['all','合計'],['unused','未使用'],['applied','結果待ち'],['won','当選']].map(([k, l]) =>
+    el('div', {class:'stat c-' + k}, el('b', {}, String(cnt[k] || 0)), el('span', {}, l))));
 
   // 入力候補
-  const fill = (id, field) => $(id).replaceChildren(...[...new Set(items.map(i => i[field]).filter(Boolean))].sort().map(v => el('option', {value:v})));
-  fill('albumList', 'album'); fill('shopList', 'shop'); fill('eventList', 'event');
+  const fill = (id, vals) => $(id).replaceChildren(...uniq(vals).sort().map(v => el('option', {value:v})));
+  fill('albumList', items.map(i => i.album));
+  fill('versionList', items.map(i => i.version));
+  fill('shopList', items.map(i => i.shop));
+  fill('memberList', [...MEMBERS, ...items.map(i => i.member)]);
 
-  // 一覧
-  const q = $('q').value.trim().toLowerCase(), fs = $('fStatus').value;
+  // イベント絞り込み
+  const fe = $('fEvent'), cur = fe.value;
+  setOptions(fe, [...events.map(e => e.name), ...items.map(i => i.event)], 'すべてのイベント', cur);
+
+  renderSummary(fe.value);
+
+  const q = $('q').value.trim().toLowerCase(), fs = $('fStatus').value, fev = fe.value;
   const shown = items
     .filter(i => !fs || i.status === fs)
-    .filter(i => !q || [i.album, i.version, i.shop, i.event, i.memo].some(v => (v || '').toLowerCase().includes(q)))
+    .filter(i => !fev || i.event === fev)
+    .filter(i => !q || [i.album, i.version, i.shop, i.event, i.region, i.category, i.member, i.memo].some(v => (v || '').toLowerCase().includes(q)))
     .sort((a, b) => (b.updated || 0) - (a.updated || 0));
 
   if (!shown.length){
-    $('list').replaceChildren(el('div', {class:'empty'}, items.length ? '該当するシリアルはありません' : 'まだシリアルがありません。「＋ 追加」から登録してください。'));
+    $('list').replaceChildren(el('div', {class:'empty'}, items.length ? '該当するシリアルはありません' : 'まだシリアルがありません。「＋ 追加」から登録してね ♡'));
     return;
   }
-  $('list').replaceChildren(...shown.map(it => {
-    const shownFull = revealed.has(it.id);
-    const meta = [it.version, it.shop, it.event, it.date].filter(Boolean).join(' ・ ');
-    return el('div', {class:'item'},
-      el('div', {class:'top'},
-        el('div', {},
-          el('div', {class:'title'}, it.album || '（アルバム未入力）'),
-          meta ? el('div', {class:'meta'}, meta) : null),
-        el('span', {class:'pill s-' + it.status}, STATUS[it.status] || it.status)),
-      el('div', {class:'serial'},
-        el('code', {}, shownFull ? it.serial : mask(it.serial)),
-        el('button', {class:'btn small', onclick:() => { shownFull ? revealed.delete(it.id) : revealed.add(it.id); render(); }}, shownFull ? "隠す" : "表示"),
-        el('button', {class:'btn small', onclick:() => copySerial(it.serial)}, 'コピー')),
-      it.memo ? el('div', {class:'memo'}, it.memo) : null,
-      el('div', {class:'actions'},
-        ...['unused','applied','won','lost'].filter(s => s !== it.status).map(s =>
-          el('button', {class:'btn small', onclick:() => setStatus(it.id, s)}, '→ ' + STATUS[s])),
-        el('span', {style:'flex:1'}),
-        el('button', {class:'btn small', onclick:() => openEdit(it.id)}, '編集'),
-        el('button', {class:'btn small danger', onclick:() => removeItem(it.id)}, '削除')));
-  }));
+  $('list').replaceChildren(...shown.map(itemCard));
 }
-$('q').addEventListener('input', render);
-$('fStatus').addEventListener('change', render);
+
+function itemCard(it){
+  const shownFull = revealed.has(it.id);
+  const meta = [it.version, it.shop].filter(Boolean).join(' ・ ');
+  const usage = [it.region, it.category, it.member].filter(Boolean);
+  const actions = [];
+  if (it.status === 'unused') actions.push(el('button', {class:'btn small use', onclick:() => openEdit(it.id, 'use')}, '使う'));
+  if (it.status === 'applied'){
+    actions.push(el('button', {class:'btn small won', onclick:() => setStatus(it.id, 'won')}, '当選 ♡'));
+    actions.push(el('button', {class:'btn small lost', onclick:() => setStatus(it.id, 'lost')}, '落選'));
+  }
+  return el('div', {class:'item st-' + it.status},
+    el('div', {class:'top'},
+      el('div', {},
+        el('div', {class:'title'}, it.album || '（アルバム未入力）'),
+        meta ? el('div', {class:'meta'}, meta) : null),
+      el('span', {class:'pill s-' + it.status}, it.status === 'won' ? '当選 ♡' : (STATUS[it.status] || it.status))),
+    (it.event || usage.length) ? el('div', {class:'usage'},
+      it.event ? el('span', {class:'chip ev'}, it.event) : null,
+      ...usage.map(u => el('span', {class:'chip'}, u)),
+      it.date ? el('span', {class:'chip', style:'background:transparent;color:var(--muted)'}, it.date) : null) : null,
+    el('div', {class:'serial'},
+      el('code', {}, shownFull ? it.serial : mask(it.serial)),
+      el('button', {class:'btn small', onclick:() => { shownFull ? revealed.delete(it.id) : revealed.add(it.id); render(); }}, shownFull ? '隠す' : '表示'),
+      el('button', {class:'btn small', onclick:() => copySerial(it.serial)}, 'コピー')),
+    it.memo ? el('div', {class:'memo'}, it.memo) : null,
+    el('div', {class:'actions'},
+      ...actions,
+      el('span', {style:'flex:1'}),
+      el('button', {class:'btn small', onclick:() => openEdit(it.id)}, '編集'),
+      el('button', {class:'btn small danger', onclick:() => removeItem(it.id)}, '削除')));
+}
+
+// 選んだイベントの集計表（種類 × 地域：当選 / 使用）
+function renderSummary(evName){
+  const box = $('summary');
+  if (!evName){ box.classList.add('hidden'); box.replaceChildren(); return; }
+  const used = items.filter(i => i.event === evName && i.status !== 'unused');
+  const ev = eventByName(evName);
+  const regions = uniq([...(ev ? ev.regions : []), ...used.map(i => i.region || '未設定')]);
+  const cats = uniq([...(ev ? ev.categories : []), ...used.map(i => i.category || '未設定')]);
+  const cell = (c, r) => {
+    const xs = used.filter(i => (i.category || '未設定') === c && (i.region || '未設定') === r);
+    if (!xs.length) return el('td', {class:'z'}, '–');
+    const w = xs.filter(i => i.status === 'won').length;
+    return el('td', {}, el('span', {class: w ? 'w' : ''}, String(w)), ` / ${xs.length}`);
+  };
+  const won = used.filter(i => i.status === 'won').length;
+  box.replaceChildren(
+    el('h3', {}, `${evName}　使用 ${used.length}枚 ・ 当選 ${won}`),
+    el('table', {},
+      el('thead', {}, el('tr', {}, el('th', {}, '種類'), ...regions.map(r => el('th', {}, r)))),
+      el('tbody', {}, ...cats.map(c => el('tr', {}, el('td', {}, c), ...regions.map(r => cell(c, r)))))),
+    el('div', {class:'hint'}, '表の数字は「当選 / 使用した枚数」です'));
+  box.classList.remove('hidden');
+}
+['q','fStatus','fEvent'].forEach(id => $(id).addEventListener(id === 'q' ? 'input' : 'change', render));
 
 // ---- 操作 ----
 async function copySerial(s){
@@ -421,8 +549,8 @@ async function copySerial(s){
 async function setStatus(id, s){
   const it = items.find(i => i.id === id); if (!it) return;
   it.status = s; it.updated = Date.now();
-  if ((s === 'applied' || s === 'won' || s === 'lost') && !it.date) it.date = new Date().toISOString().slice(0, 10);
   await persist(); render();
+  toast(s === 'won' ? 'おめでとう〜！♡' : '記録しました');
 }
 async function removeItem(id){
   const it = items.find(i => i.id === id); if (!it) return;
@@ -430,20 +558,36 @@ async function removeItem(id){
   items = items.filter(i => i.id !== id);
   await persist(); render(); toast('削除しました');
 }
-function openEdit(id){
+const newId = () => crypto.randomUUID ? crypto.randomUUID() : b64(crypto.getRandomValues(new Uint8Array(12)));
+
+// 地域・種類の選択肢をイベントに合わせて切り替え
+function syncUsageSelects(region, category){
+  const ev = eventByName($('eEvent').value);
+  setOptions($('eRegion'), ev ? ev.regions : [], '—', region);
+  setOptions($('eCategory'), ev ? ev.categories : [], '—', category);
+}
+$('eEvent').addEventListener('change', () => syncUsageSelects($('eRegion').value, $('eCategory').value));
+$('eStatus').addEventListener('change', () => { if ($('eStatus').value !== 'unused' && !$('eDate').value) $('eDate').value = today(); });
+
+function openEdit(id, mode){
   editingId = id || null;
   const it = id ? items.find(i => i.id === id) : {};
-  $('editTitle').textContent = id ? 'シリアルを編集' : 'シリアルを追加';
+  const use = mode === 'use';
+  $('editTitle').textContent = use ? 'シリアルを使う' : id ? 'シリアルを編集' : 'シリアルを追加';
   $('eSerial').value = it.serial || '';
   $('eAlbum').value = it.album || '';
   $('eVersion').value = it.version || '';
   $('eShop').value = it.shop || '';
-  $('eEvent').value = it.event || '';
-  $('eStatus').value = it.status || 'unused';
-  $('eDate').value = it.date || '';
+  $('eStatus').value = use ? 'applied' : (it.status || 'unused');
+  $('eDate').value = it.date || (use ? today() : '');
+  // 使うときは前回使ったイベントを初期値に
+  const lastEv = use && !it.event ? (items.filter(i => i.event).sort((a, b) => b.updated - a.updated)[0] || {}).event : '';
+  setOptions($('eEvent'), events.map(e => e.name), '—', it.event || lastEv || '');
+  syncUsageSelects(it.region || '', it.category || '');
+  $('eMember').value = it.member || '';
   $('eMemo').value = it.memo || '';
   $('editDlg').showModal();
-  $('eSerial').focus();
+  if (use) $('usageSec').scrollIntoView({block:'start'}); else if (!id) $('eSerial').focus();
 }
 $('addBtn').addEventListener('click', () => openEdit(null));
 $('editCancel').addEventListener('click', () => $('editDlg').close());
@@ -454,22 +598,74 @@ $('editForm').addEventListener('submit', async e => {
   const dup = items.find(i => i.serial.toUpperCase() === serial.toUpperCase() && i.id !== editingId);
   if (dup && !confirm('同じシリアルがすでに登録されています。保存しますか？')) return;
   const data = {
-    serial, album:$('eAlbum').value.trim(), version:$('eVersion').value.trim(),
-    shop:$('eShop').value.trim(), event:$('eEvent').value.trim(),
-    status:$('eStatus').value, date:$('eDate').value, memo:$('eMemo').value.trim(), updated:Date.now()
+    serial, album:$('eAlbum').value.trim(), version:$('eVersion').value.trim(), shop:$('eShop').value.trim(),
+    status:$('eStatus').value, date:$('eDate').value,
+    event:$('eEvent').value, region:$('eRegion').value, category:$('eCategory').value, member:$('eMember').value.trim(),
+    memo:$('eMemo').value.trim(), updated:Date.now()
   };
   if (editingId) Object.assign(items.find(i => i.id === editingId), data);
-  else items.push({id:crypto.randomUUID ? crypto.randomUUID() : b64(crypto.getRandomValues(new Uint8Array(12))), created:Date.now(), ...data});
+  else items.push({id:newId(), created:Date.now(), ...data});
   await persist();
-  $('editDlg').close(); $('eSerial').value = '';
+  $('editDlg').close();
   render(); toast('保存しました');
+});
+
+// ---- まとめて追加 ----
+$('bulkBtn').addEventListener('click', () => { $('bulkForm').reset(); $('bulkDlg').showModal(); });
+$('bulkCancel').addEventListener('click', () => $('bulkDlg').close());
+$('bulkForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const have = new Set(items.map(i => i.serial.toUpperCase()));
+  const lines = $('bSerials').value.split('\n').map(s => s.trim().replace(/\s+/g, '')).filter(Boolean);
+  let added = 0, skipped = 0;
+  const now = Date.now();
+  for (const serial of lines){
+    if (have.has(serial.toUpperCase())) { skipped++; continue; }
+    have.add(serial.toUpperCase());
+    items.push({id:newId(), created:now, updated:now + added, serial,
+      album:$('bAlbum').value.trim(), version:$('bVersion').value.trim(), shop:$('bShop').value.trim(), status:'unused'});
+    added++;
+  }
+  await persist();
+  $('bulkDlg').close(); render();
+  toast(`${added}件を登録しました` + (skipped ? `（重複${skipped}件はスキップ）` : ''));
+});
+
+// ---- イベント設定 ----
+function evRow(ev){
+  return el('div', {class:'evbox', 'data-id':ev.id},
+    el('label', {}, 'イベント名'), el('input', {class:'evName', value:ev.name || '', placeholder:'例：SUIATSU'}),
+    el('label', {}, '地域'), el('input', {class:'evRegions', value:(ev.regions || []).join('、'), placeholder:'例：関東、関西'}),
+    el('label', {}, '種類'), el('textarea', {class:'evCats', placeholder:'例：個別ハイタッチ、全員サイン会'}),
+    el('button', {class:'btn small danger', type:'button', style:'margin-top:8px', onclick:e => e.target.closest('.evbox').remove()}, 'このイベントを削除'));
+}
+$('eventsBtn').addEventListener('click', () => {
+  $('evList').replaceChildren(...events.map(ev => { const r = evRow(ev); r.querySelector('.evCats').value = (ev.categories || []).join('、'); return r; }));
+  $('evDlg').showModal();
+});
+$('evAdd').addEventListener('click', () => { const r = evRow({id:newId()}); $('evList').append(r); r.querySelector('.evName').focus(); });
+$('evCancel').addEventListener('click', () => $('evDlg').close());
+$('evForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const next = [];
+  for (const box of $('evList').querySelectorAll('.evbox')){
+    const name = box.querySelector('.evName').value.trim();
+    if (!name) continue;
+    const old = events.find(ev => ev.id === box.dataset.id);
+    // イベント名を変えたら、登録済みシリアルの表記も合わせて変更
+    if (old && old.name !== name) items.forEach(i => { if (i.event === old.name) i.event = name; });
+    next.push({id:box.dataset.id, name, regions:splitList(box.querySelector('.evRegions').value), categories:splitList(box.querySelector('.evCats').value)});
+  }
+  events = next;
+  await persist();
+  $('evDlg').close(); render(); toast('イベント設定を保存しました');
 });
 
 // ---- バックアップ ----
 $('exportBtn').addEventListener('click', async () => {
-  const blob = await seal(key, salt, {items});
+  const blob = await seal(key, salt, snapshot());
   const url = URL.createObjectURL(new Blob([JSON.stringify(blob)], {type:'application/json'}));
-  const a = el('a', {href:url, download:`serial-backup-${new Date().toISOString().slice(0,10)}.json`});
+  const a = el('a', {href:url, download:`serial-backup-${today()}.json`});
   document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
   toast('暗号化したバックアップを保存しました');
@@ -485,7 +681,7 @@ $('fileIn').addEventListener('change', async () => {
   const pw = prompt('バックアップ作成時のパスワードを入力してください');
   if (pw == null) return;
   let data, k;
-  try { k = await deriveKey(pw, unb64(blob.salt), blob.iter || PBKDF2_ITER); data = await open(k, blob); }
+  try { k = await deriveKey(pw, unb64(blob.salt), blob.iter || PBKDF2_ITER); data = await unseal(k, blob); }
   catch { return toast('パスワードが違うか、ファイルが壊れています'); }
   const incoming = Array.isArray(data.items) ? data.items : [];
   if (key){
@@ -493,12 +689,14 @@ $('fileIn').addEventListener('change', async () => {
     const map = new Map(items.map(i => [i.id, i]));
     for (const it of incoming){ const cur = map.get(it.id); if (!cur || (it.updated || 0) > (cur.updated || 0)) map.set(it.id, it); }
     items = [...map.values()];
+    const evMap = new Map(events.map(e => [e.name, e]));
+    for (const ev of (Array.isArray(data.events) ? data.events : [])) if (!evMap.has(ev.name)) events.push(ev);
     await persist(); render();
     toast(`${incoming.length}件を復元・統合しました`);
   } else {
     if (readStore() && !confirm('この端末の既存データをバックアップの内容で置き換えます。よろしいですか？')) return;
     localStorage.setItem(STORE_KEY, JSON.stringify(blob));
-    key = k; salt = unb64(blob.salt); items = incoming;
+    key = k; salt = unb64(blob.salt); load(data);
     showMain(); toast(`${incoming.length}件を復元しました`);
   }
 });
@@ -510,7 +708,7 @@ $('pwForm').addEventListener('submit', async e => {
   e.preventDefault();
   const err = $('pwErr');
   if ($('pwNew').value !== $('pwNew2').value) return err.textContent = '新しいパスワードが一致しません';
-  try { await open(await deriveKey($('pwOld').value, salt), readStore()); }
+  try { await unseal(await deriveKey($('pwOld').value, salt), readStore()); }
   catch { return err.textContent = '現在のパスワードが違います'; }
   salt = crypto.getRandomValues(new Uint8Array(16));
   key = await deriveKey($('pwNew').value, salt);
@@ -533,12 +731,11 @@ function toast(msg){ const t = $('toast'); t.textContent = msg; t.classList.add(
 
 // ---- 起動 ----
 if (!window.crypto || !crypto.subtle){
-  document.body.replaceChildren(el('div', {class:'wrap'}, el('div', {class:'card lock'}, 'このブラウザでは暗号化機能が使えないため起動できません（https または端末内のファイルとして開いてください）。')));
+  document.body.replaceChildren(el('div', {class:'wrap'}, el('div', {class:'card lock'}, 'このブラウザでは暗号化機能が使えないため起動できません。')));
   return;
 }
 showLock();
 
-// オフライン対応（https で開いたときのみ）
 if ('serviceWorker' in navigator && location.protocol === 'https:'){
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }

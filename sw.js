@@ -1,6 +1,6 @@
 // オフラインで開けるよう、アプリ本体（コードとアイコン）だけをキャッシュします。
 // シリアルのデータはここでは一切扱いません（ブラウザ内に暗号化して保存）。
-const CACHE = 'skz-serial-v1';
+const CACHE = 'skz-serial-v2';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon-192.png', './icon-512.png', './apple-touch-icon.png'];
 
 self.addEventListener('install', e => {
