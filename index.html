@@ -83,6 +83,12 @@ textarea{min-height:64px;resize:vertical}
 .stat b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
 .stat span{font-size:11px;color:var(--muted)}
 .stat.c-unused b{color:var(--unused)} .stat.c-won b{color:var(--won)} .stat.c-lost b{color:var(--lost)}
+.cd{display:flex;align-items:center;gap:12px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-radius:18px;padding:10px 16px;margin-bottom:8px;box-shadow:var(--shadow)}
+.cd .days{font-size:26px;font-weight:bold;line-height:1;white-space:nowrap}
+.cd .days small{font-size:13px;margin-left:2px}
+.cd .info{flex:1;font-size:12px;line-height:1.5;min-width:0}
+.cd .info b{font-size:14px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cd.today{background:linear-gradient(135deg,#ff4f86,#ff8a5c)}
 .summary{margin-bottom:12px;overflow-x:auto}
 .summary table{border-collapse:collapse;width:100%;font-size:13px}
 .summary th,.summary td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:center;white-space:nowrap}
@@ -160,6 +166,7 @@ dialog h2{font-size:17px;margin:0 0 4px}
       <button class="btn small" id="lockNow">ロック</button>
     </div>
 
+    <div id="countdown"></div>
     <div class="stats" id="stats"></div>
 
     <div class="bar">
@@ -302,6 +309,7 @@ const STATUS = {unused:'未使用', applied:'結果未入力', won:'当選', los
 const NEW = '__new__';
 const DEFAULT_EVENTS = [{
   id:'ev-suiatsu', name:'SUIATSU',
+  deadline:'2026-12-13',
   regions:['関東','関西'],
   categories:['個別ハイタッチ','個別サイン','ユニットハイタッチ','全員サイン会','全員トークショー']
 }];
@@ -343,6 +351,8 @@ const snapshot = () => ({items, events});
 function load(data){
   items = Array.isArray(data.items) ? data.items : [];
   events = Array.isArray(data.events) ? data.events : structuredClone(DEFAULT_EVENTS);
+  // 締切日が未設定の既存SUIATSUに今回の期間（〜12/13）を設定
+  for (const ev of events) if (ev.name === 'SUIATSU' && ev.deadline === undefined) ev.deadline = '2026-12-13';
 }
 async function persist(){
   const blob = await seal(key, salt, snapshot());
@@ -449,8 +459,24 @@ function comboToggle(id){
 }
 
 // ---- 表示 ----
+function daysLeft(ymd){
+  const [y, m, d] = ymd.split('-').map(Number);
+  const now = new Date();
+  return Math.round((new Date(y, m - 1, d) - new Date(now.getFullYear(), now.getMonth(), now.getDate())) / 864e5);
+}
+function renderCountdown(){
+  const list = events.filter(e => e.deadline && daysLeft(e.deadline) >= 0).sort((a, b) => a.deadline.localeCompare(b.deadline));
+  $('countdown').replaceChildren(...list.map(ev => {
+    const n = daysLeft(ev.deadline), [, m, d] = ev.deadline.split('-').map(Number);
+    const unused = items.filter(i => i.event === ev.name && i.status === 'unused').length;
+    return el('div', {class:'cd' + (n === 0 ? ' today' : '')},
+      el('div', {class:'days'}, n === 0 ? '今日まで！' : el('span', {}, 'あと' + n, el('small', {}, '日'))),
+      el('div', {class:'info'}, el('b', {}, ev.name), `${m}/${d}まで ・ 未使用 ${unused}枚`));
+  }));
+}
 function render(){
   if (!key) return;
+  renderCountdown();
   const cnt = {all:items.length, unused:0, applied:0, won:0, lost:0};
   for (const it of items) cnt[it.status] = (cnt[it.status] || 0) + 1;
   $('stats').replaceChildren(...[['all','合計'],['unused','未使用'],['won','当選'],['lost','落選']].map(([k, l]) =>
@@ -670,6 +696,7 @@ $('bulkForm').addEventListener('submit', async e => {
 function evRow(ev){
   return el('div', {class:'evbox', 'data-id':ev.id},
     el('label', {}, 'イベント名（CDタイトル）'), el('input', {class:'evName', value:ev.name || '', placeholder:'例：SUIATSU'}),
+    el('label', {}, 'シリアル期間の締切日'), el('input', {class:'evDeadline', type:'date', value:ev.deadline || ''}),
     el('label', {}, '地域'), el('input', {class:'evRegions', value:(ev.regions || []).join('、'), placeholder:'例：関東、関西'}),
     el('label', {}, '開催場所'), el('input', {class:'evVenues', value:(ev.venues || []).join('、'), placeholder:'例：幕張メッセ、インテックス大阪'}),
     el('label', {}, '種類'), el('textarea', {class:'evCats', placeholder:'例：個別ハイタッチ、全員サイン会'}),
@@ -690,7 +717,7 @@ $('evForm').addEventListener('submit', async e => {
     const old = events.find(ev => ev.id === box.dataset.id);
     // イベント名を変えたら、登録済みシリアルの表記も合わせて変更
     if (old && old.name !== name) items.forEach(i => { if (i.event === old.name) i.event = name; });
-    next.push({id:box.dataset.id, name, regions:splitList(box.querySelector('.evRegions').value), venues:splitList(box.querySelector('.evVenues').value), categories:splitList(box.querySelector('.evCats').value)});
+    next.push({id:box.dataset.id, name, deadline:box.querySelector('.evDeadline').value, regions:splitList(box.querySelector('.evRegions').value), venues:splitList(box.querySelector('.evVenues').value), categories:splitList(box.querySelector('.evCats').value)});
   }
   events = next;
   await persist();
