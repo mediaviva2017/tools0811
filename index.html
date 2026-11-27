@@ -163,7 +163,7 @@ dialog h2{font-size:17px;margin:0 0 4px}
     <div class="stats" id="stats"></div>
 
     <div class="bar">
-      <input class="grow" id="q" type="search" placeholder="検索（アルバム・店舗・イベント・メモ）" autocomplete="off">
+      <input class="grow" id="q" type="search" placeholder="検索（イベント・店舗・会場・メモ）" autocomplete="off">
     </div>
     <div class="bar">
       <select id="fEvent"></select>
@@ -204,16 +204,14 @@ dialog h2{font-size:17px;margin:0 0 4px}
     <input id="eSerial" required spellcheck="false" autocapitalize="characters" autocorrect="off" style="font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.05em">
     <div class="hint">iPhone：入力欄をタップ →「テキストをスキャン」でカメラから読み取れます</div>
     <div class="grid2">
-      <div><label for="eAlbum">アルバム</label><input id="eAlbum" list="albumList"></div>
-      <div><label for="eVersion">バージョン</label><input id="eVersion" list="versionList" placeholder="例：通常盤 / 限定盤A"></div>
+      <div><label for="eEvent">イベント（CDタイトル）</label><select id="eEvent"></select>
+        <input id="eEventNew" class="hidden newin" placeholder="例：SUIATSU"></div>
       <div><label for="eShop">購入店舗</label><input id="eShop" list="shopList" placeholder="例：タワレコ"></div>
     </div>
 
     <div class="section" id="usageSec">
       <h3>使いみち・結果</h3>
       <div class="grid2">
-        <div><label for="eEvent">イベント</label><select id="eEvent"></select>
-          <input id="eEventNew" class="hidden newin" placeholder="イベント名を入力"></div>
         <div><label for="eRegion">地域</label><select id="eRegion"></select>
           <input id="eRegionNew" class="hidden newin" placeholder="地域を入力"></div>
         <div><label for="eVenue">開催場所</label><select id="eVenue"></select>
@@ -249,8 +247,8 @@ dialog h2{font-size:17px;margin:0 0 4px}
     <label for="bSerials">シリアルコード（1行に1つ）</label>
     <textarea id="bSerials" required spellcheck="false" autocapitalize="characters" autocorrect="off" style="min-height:140px;font-family:ui-monospace,Menlo,Consolas,monospace"></textarea>
     <div class="grid2">
-      <div><label for="bAlbum">アルバム</label><input id="bAlbum" list="albumList"></div>
-      <div><label for="bVersion">バージョン</label><input id="bVersion" list="versionList"></div>
+      <div><label for="bEvent">イベント（CDタイトル）</label><select id="bEvent"></select>
+        <input id="bEventNew" class="hidden newin" placeholder="例：SUIATSU"></div>
       <div><label for="bShop">購入店舗</label><input id="bShop" list="shopList"></div>
     </div>
     <div class="hint">すべて「未使用」で登録されます。すでに登録済みのシリアルはスキップします。</div>
@@ -293,8 +291,6 @@ dialog h2{font-size:17px;margin:0 0 4px}
   </form>
 </dialog>
 
-<datalist id="albumList"></datalist>
-<datalist id="versionList"></datalist>
 <datalist id="shopList"></datalist>
 <input type="file" id="fileIn" accept=".json,application/json" class="hidden">
 <div class="toast" id="toast"></div>
@@ -469,8 +465,6 @@ function render(){
 
   // 入力候補
   const fill = (id, vals) => $(id).replaceChildren(...uniq(vals).sort().map(v => el('option', {value:v})));
-  fill('albumList', items.map(i => i.album));
-  fill('versionList', items.map(i => i.version));
   fill('shopList', items.map(i => i.shop));
 
   // イベント絞り込み
@@ -495,7 +489,7 @@ function render(){
 
 function itemCard(it){
   const shownFull = revealed.has(it.id);
-  const meta = [it.version, it.shop].filter(Boolean).join(' ・ ');
+  const meta = [it.shop, !it.event && it.album].filter(Boolean).join(' ・ ');
   const usage = [it.region, it.venue, it.category].filter(Boolean);
   const actions = [];
   if (it.status === 'unused') actions.push(el('button', {class:'btn small use', onclick:() => openEdit(it.id, 'use')}, '使う'));
@@ -506,11 +500,10 @@ function itemCard(it){
   return el('div', {class:'item st-' + it.status},
     el('div', {class:'top'},
       el('div', {},
-        el('div', {class:'title'}, it.album || '（アルバム未入力）'),
+        el('div', {class:'title'}, it.event || it.album || '（イベント未設定）'),
         meta ? el('div', {class:'meta'}, meta) : null),
       el('span', {class:'pill s-' + it.status}, it.status === 'won' ? '当選 ♡' : (STATUS[it.status] || it.status))),
-    (it.event || usage.length) ? el('div', {class:'usage'},
-      it.event ? el('span', {class:'chip ev'}, it.event) : null,
+    usage.length ? el('div', {class:'usage'},
       ...usage.map(u => el('span', {class:'chip'}, u)),
       it.date ? el('span', {class:'chip', style:'background:transparent;color:var(--muted)'}, it.date) : null) : null,
     el('div', {class:'serial'},
@@ -568,7 +561,7 @@ async function setStatus(id, s){
 }
 async function removeItem(id){
   const it = items.find(i => i.id === id); if (!it) return;
-  if (!confirm(`「${it.album || 'シリアル'}」(…${it.serial.slice(-4)}) を削除しますか？`)) return;
+  if (!confirm(`「${it.event || it.album || 'シリアル'}」(…${it.serial.slice(-4)}) を削除しますか？`)) return;
   items = items.filter(i => i.id !== id);
   await persist(); render(); toast('削除しました');
 }
@@ -595,8 +588,6 @@ function openEdit(id, mode){
   const use = mode === 'use';
   $('editTitle').textContent = use ? 'シリアルを使う' : id ? 'シリアルを編集' : 'シリアルを追加';
   $('eSerial').value = it.serial || '';
-  $('eAlbum').value = it.album || '';
-  $('eVersion').value = it.version || '';
   $('eShop').value = it.shop || '';
   $('eStatusApplied').hidden = it.status !== 'applied';  // 旧データ用
   $('eStatus').value = it.status || 'unused';
@@ -605,10 +596,12 @@ function openEdit(id, mode){
   $('eWon').classList.toggle('hidden', !use);
   $('eLost').classList.toggle('hidden', !use);
   $('eDate').value = it.date || (use ? today() : '');
-  // 使うときは前回使ったイベントを初期値に
-  const last = use && !it.event ? (items.filter(i => i.event && i.status !== 'unused').sort((a, b) => b.updated - a.updated)[0] || {}) : {};
-  const lastEv = last.event || '';
-  setOptions($('eEvent'), events.map(e => e.name), '—', it.event || lastEv || '', true);
+  // 新規追加：絞り込み中のイベント→最後に登録したイベントを初期値に
+  const recent = [...items].sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  const defEv = id ? '' : ($('fEvent').value || (recent.find(i => i.event) || {}).event || '');
+  // 使うとき：同じイベントで前回使った地域・開催場所を初期値に
+  const last = use ? (recent.find(i => i.status !== 'unused' && i.event === it.event && i.id !== it.id) || {}) : {};
+  setOptions($('eEvent'), events.map(e => e.name), '—', it.event || defEv, true);
   comboToggle('eEvent');
   syncUsageSelects(it.region || last.region || '', it.category || '', it.venue || last.venue || '');
   $('eMemo').value = it.memo || '';
@@ -625,16 +618,14 @@ $('editForm').addEventListener('submit', async e => {
   if (dup && !confirm('同じシリアルがすでに登録されています。保存しますか？')) return;
   const status = (e.submitter && e.submitter.dataset.status) || $('eStatus').value;
   const data = {
-    serial, album:$('eAlbum').value.trim(), version:$('eVersion').value.trim(), shop:$('eShop').value.trim(),
+    serial, shop:$('eShop').value.trim(),
     status, date:$('eDate').value || (status !== 'unused' ? today() : ''),
     event:comboValue('eEvent'), region:comboValue('eRegion'), category:comboValue('eCategory'), venue:comboValue('eVenue'),
     memo:$('eMemo').value.trim(), updated:Date.now()
   };
   // メニューにない入力はイベント設定に追加して次回から選べるように
   if (data.event){
-    let ev = eventByName(data.event);
-    if (!ev) { ev = {id:newId(), name:data.event, regions:[], categories:[], venues:[]}; events.push(ev); }
-    ev.venues = ev.venues || [];
+    const ev = ensureEvent(data.event);
     if (data.venue && !ev.venues.includes(data.venue)) ev.venues.push(data.venue);
     if (data.region && !ev.regions.includes(data.region)) ev.regions.push(data.region);
     if (data.category && !ev.categories.includes(data.category)) ev.categories.push(data.category);
@@ -646,8 +637,22 @@ $('editForm').addEventListener('submit', async e => {
   render(); toast(status === 'won' ? 'おめでとう〜！♡' : '保存しました');
 });
 
+function ensureEvent(name){
+  let ev = eventByName(name);
+  if (!ev) { ev = {id:newId(), name, regions:[], categories:[], venues:[]}; events.push(ev); }
+  ev.regions = ev.regions || []; ev.categories = ev.categories || []; ev.venues = ev.venues || [];
+  return ev;
+}
+
 // ---- まとめて追加 ----
-$('bulkBtn').addEventListener('click', () => { $('bulkForm').reset(); $('bulkDlg').showModal(); });
+$('bEvent').addEventListener('change', () => comboToggle('bEvent'));
+$('bulkBtn').addEventListener('click', () => {
+  $('bulkForm').reset();
+  const recent = [...items].sort((a, b) => (b.updated || 0) - (a.updated || 0));
+  setOptions($('bEvent'), events.map(e => e.name), '—', $('fEvent').value || (recent.find(i => i.event) || {}).event || '', true);
+  comboToggle('bEvent');
+  $('bulkDlg').showModal();
+});
 $('bulkCancel').addEventListener('click', () => $('bulkDlg').close());
 $('bulkForm').addEventListener('submit', async e => {
   e.preventDefault();
@@ -655,11 +660,13 @@ $('bulkForm').addEventListener('submit', async e => {
   const lines = $('bSerials').value.split('\n').map(s => s.trim().replace(/\s+/g, '')).filter(Boolean);
   let added = 0, skipped = 0;
   const now = Date.now();
+  const event = comboValue('bEvent');
+  if (event) ensureEvent(event);
   for (const serial of lines){
     if (have.has(serial.toUpperCase())) { skipped++; continue; }
     have.add(serial.toUpperCase());
     items.push({id:newId(), created:now, updated:now + added, serial,
-      album:$('bAlbum').value.trim(), version:$('bVersion').value.trim(), shop:$('bShop').value.trim(), status:'unused'});
+      event, shop:$('bShop').value.trim(), status:'unused'});
     added++;
   }
   await persist();
@@ -670,7 +677,7 @@ $('bulkForm').addEventListener('submit', async e => {
 // ---- イベント設定 ----
 function evRow(ev){
   return el('div', {class:'evbox', 'data-id':ev.id},
-    el('label', {}, 'イベント名'), el('input', {class:'evName', value:ev.name || '', placeholder:'例：SUIATSU'}),
+    el('label', {}, 'イベント名（CDタイトル）'), el('input', {class:'evName', value:ev.name || '', placeholder:'例：SUIATSU'}),
     el('label', {}, '地域'), el('input', {class:'evRegions', value:(ev.regions || []).join('、'), placeholder:'例：関東、関西'}),
     el('label', {}, '開催場所'), el('input', {class:'evVenues', value:(ev.venues || []).join('、'), placeholder:'例：幕張メッセ、インテックス大阪'}),
     el('label', {}, '種類'), el('textarea', {class:'evCats', placeholder:'例：個別ハイタッチ、全員サイン会'}),
